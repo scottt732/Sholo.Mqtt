@@ -137,10 +137,39 @@ with `ClientId` and (optionally) the strongly typed topic parameters.
 
 ## Thanks
 
-This project is based on Christian Kratky's MQTTnet library.  Thanks to Christian and all
+This project is based on Christian Kratky's [MQTTnet library](https://github.com/chkr1011/MQTTnet).  Thanks to Christian and all
 of the contributors on that project!
 
-[![NuGet Badge](https://buildstats.info/nuget/MQTTnet)](https://www.nuget.org/packages/MQTTnet)
+Also a huge thanks to Rahen Saeed for the [.NET Boxed Templates](https://github.com/Dotnet-Boxed/Templates), without which I probably
+would have never gotten around to releasing any of this.
+
+## Related Projects
+
+I've been building a bunch of small utilities, applications, and container related to home automation,
+primarily using MQTT and/or [Home Assistant](https://www.home-assistant.io/). 
+
+There are a few foundational libraries/frameworks that I've created along the way.  The table shows the third-party pieces
+they're built on.
+
+<table width="100%">
+    <tr>
+        <th colspan="4">Home Automation Foundation Libraries</th>
+    </tr>
+    <tr>
+        <th width="25%"><a href="https://github.com/scottt732/Sholo.CommandLine">Sholo.CommandLine</a></td>
+        <th width="25%"><a href="https://github.com/scottt732/Sholo.HomeAssistant">Sholo.HomeAssistant</a></td>
+        <th width="25%"><a href="https://github.com/scottt732/Sholo.Mqtt">Sholo.Mqtt</a></td>
+        <th width="25%"><a href="https://github.com/scottt732/Sholo.Utils">Sholo.Utils</a></td>
+    </tr>
+    <tr>
+        <th width="25%"><a href="https://github.com/natemcmaster/CommandLineUtils">natemcmaster/CommandLineUtils</a></td>
+        <th width="25%">-</td>
+        <th width="25%"><a href="https://github.com/chkr1011/MQTTnet">chkr1011/MQTTnet</a></td>
+        <th width="25%">-</td>
+    </tr>
+</table>
+
+And a handful of applications that I plan to publish soon.
 
 ## License
 
