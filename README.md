@@ -137,10 +137,10 @@ with `ClientId` and (optionally) the strongly typed topic parameters.
 
 ## Thanks
 
-This project is based on Christian Kratky's [MQTTnet library](https://github.com/chkr1011/MQTTnet).  Thanks to Christian and all
+This project is based on [@chkratky](https://twitter.com/chkratky)'s [MQTTnet library](https://github.com/chkr1011/MQTTnet).  Thanks to Christian and all
 of the contributors on that project!
 
-Also a huge thanks to Rahen Saeed for the [.NET Boxed Templates](https://github.com/Dotnet-Boxed/Templates), without which I probably
+A huge thanks to [@RahenSaeedUK](https://twitter.com/RehanSaeedUK) for the [.NET Boxed Templates](https://github.com/Dotnet-Boxed/Templates), without which I probably
 would have never gotten around to releasing any of this.
 
 ## Related Projects
