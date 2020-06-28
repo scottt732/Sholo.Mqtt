@@ -1,12 +1,8 @@
-version: 1
-update_configs:
-- package_manager: dotnet:nuget
-  directory: /
-  update_schedule: live
-  target_branch: master
-  default_labels:
-  - dependencies
-  allowed_updates:
-  - match:
-      update_type: all
-      dependency_type: direct
+version: 2
+updates:
+- package-ecosystem: "nuget"
+  directory: "/"
+  schedule:
+    interval: "daily"
+  allow:
+  - dependency-type: "direct"
