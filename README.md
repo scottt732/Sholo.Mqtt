@@ -7,8 +7,8 @@
 [![Twitter Follow](https://img.shields.io/twitter/follow/scottt732.svg?style=social&label=Follow)](https://twitter.com/scottt732)
 
 Sholo.MQTT is a lightweight ASP.NET Core-inspired framework for applications that consume (and optionally produce)
-MQTT messages.  It bridges [chkr1011/MQTTnet](https://github.com/chkr1011/MQTTnet) with the .NET Core Generic Host,
-provides an [`IApplicationBuilder`-like pattern](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/middleware/?view=aspnetcore-3.1)
+MQTT messages.  It bridges [chkr1011/MQTTnet](https://github.com/chkr1011/MQTTnet) with the .NET Generic Host,
+provides an [`IApplicationBuilder`-like pattern](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/middleware/?view=aspnetcore-5.0)
 for configuring your MQTT subscriptions, and provides strongly-typed databinding for topic variables (similar to
 ASP.NET Core's MVC's model binding).
 
