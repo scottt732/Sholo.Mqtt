@@ -21,7 +21,7 @@ jobs:
     runs-on: ${{matrix.os}}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macOS-latest]
+        os: [ubuntu-latest] # , windows-latest, macOS-latest
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -31,10 +31,10 @@ jobs:
     - name: 'Git Fetch Tags'
       run: git fetch --tags
       shell: pwsh
-    - name: 'Install .NET Core SDK'
+    - name: 'Install .NET SDK'
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: 3.1.301
+        dotnet-version: 5.0.101
     - name: 'Dotnet Tool Restore'
       run: dotnet tool restore
       shell: pwsh
