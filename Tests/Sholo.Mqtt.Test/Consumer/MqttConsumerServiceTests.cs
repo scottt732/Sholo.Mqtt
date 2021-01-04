@@ -233,13 +233,13 @@ namespace Sholo.Mqtt.Test.Consumer
 
             await mqttConsumerService.StartAsync(CancellationToken.None);
 
-            MockManagedMqttClient
-                .Setup(c => c.SubscribeAsync(It.Is<MqttTopicFilter[]>(
-                    f => f.Length == 2 &&
-                        f[0].Topic.Equals("test/builder_1/build_1") &&
-                        f[1].Topic.Equals("test/builder_2/build_1"))))
-                .Returns(Task.CompletedTask)
-                .Verifiable();
+            // MockManagedMqttClient
+            //    .Setup(c => c.SubscribeAsync(It.Is<MqttTopicFilter[]>(
+            //        f => f.Length == 2 &&
+            //            f[0].Topic.Equals("test/builder_1/build_1") &&
+            //            f[1].Topic.Equals("test/builder_2/build_1"))))
+            //    .Returns(Task.CompletedTask)
+            //    .Verifiable();
 
             MockManagedMqttClient
                 .Setup(c => c.SubscribeAsync(It.Is<MqttTopicFilter[]>(
