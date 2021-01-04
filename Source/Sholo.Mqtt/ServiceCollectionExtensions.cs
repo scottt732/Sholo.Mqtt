@@ -3,6 +3,7 @@ using System.Threading;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -12,6 +13,11 @@ using MQTTnet.Client.Options;
 using MQTTnet.Extensions.ManagedClient;
 using MQTTnet.Formatter;
 using MQTTnet.Server;
+using Sholo.Mqtt.ApplicationBuilder;
+using Sholo.Mqtt.ApplicationBuilderConfiguration;
+using Sholo.Mqtt.ApplicationProvider;
+using Sholo.Mqtt.Consumer;
+using Sholo.Mqtt.Settings;
 
 namespace Sholo.Mqtt
 {
@@ -62,19 +68,8 @@ namespace Sholo.Mqtt
             services.AddSingleton<IMqttFactory, MqttFactory>();
             services.AddTransient(sp =>
             {
-                var mqttSettings = sp.GetRequiredService<IOptions<TMqttSettings>>().Value;
                 var factory = sp.GetRequiredService<IMqttFactory>();
                 var client = factory.CreateMqttClient();
-
-                var onlineMessage = mqttSettings.GetOnlineApplicationMessage();
-                if (onlineMessage != null)
-                {
-                    client.UseConnectedHandler(async args =>
-                    {
-                        await client.PublishAsync(onlineMessage);
-                    });
-                }
-
                 return client;
             });
 
@@ -110,44 +105,8 @@ namespace Sholo.Mqtt
 
             services.AddSingleton(sp =>
             {
-                var hostApplicationLifetime = sp.GetRequiredService<IHostApplicationLifetime>();
                 var factory = sp.GetRequiredService<IMqttFactory>();
-                var logger = sp.GetRequiredService<ILogger<IManagedMqttClient>>();
-                var mqttSettings = sp.GetRequiredService<IOptions<TMqttSettings>>();
-                var managedMqttClientOptions = sp.GetRequiredService<IManagedMqttClientOptions>();
-
-                logger.LogInformation("Connecting to MQTT broker at {host}:{port}...", mqttSettings.Value.Host, mqttSettings.Value.Port ?? 1883);
-
                 var mqttClient = factory.CreateManagedMqttClient();
-                var onlineMessage = mqttSettings.Value.GetOnlineApplicationMessage();
-
-                var mre = new ManualResetEventSlim();
-                mqttClient.UseConnectedHandler(async ea =>
-                {
-                    logger.LogInformation("Connected to MQTT broker.");
-                    if (onlineMessage != null)
-                    {
-                        logger.LogInformation("Sending online message to {topic}", onlineMessage.Topic);
-                        await mqttClient.PublishAsync(onlineMessage);
-                    }
-
-                    mre.Set();
-                });
-
-                mqttClient.UseDisconnectedHandler(ea =>
-                {
-                    if (!hostApplicationLifetime.ApplicationStopping.IsCancellationRequested)
-                    {
-                        logger.LogWarning("Attempting to restore MQTT broker connection...");
-                    }
-                });
-
-#pragma warning disable VSTHRD002
-                mqttClient.StartAsync(managedMqttClientOptions).Wait();
-#pragma warning restore VSTHRD002
-
-                mre.Wait(hostApplicationLifetime.ApplicationStopping);
-
                 return mqttClient;
             });
 
@@ -160,6 +119,31 @@ namespace Sholo.Mqtt
         {
             services.AddSingleton<IManagedMqttClientStorage, TStorage>();
             services.AddManagedMqttServices<TMqttSettings>(mqttConfiguration);
+
+            return services;
+        }
+
+        public static IServiceCollection AddMqttConsumerService(
+            this IServiceCollection services,
+            IConfiguration mqttConfiguration = null,
+            Action<IMqttApplicationBuilder> configurator = null
+        )
+            => services.AddMqttConsumerService<ManagedMqttSettings>(
+                mqttConfiguration,
+                configurator
+            );
+
+        public static IServiceCollection AddMqttConsumerService<TMqttSettings>(
+            this IServiceCollection services,
+            IConfiguration mqttConfiguration = null,
+            Action<IMqttApplicationBuilder> configurator = null
+        )
+            where TMqttSettings : ManagedMqttSettings, new()
+        {
+            services.TryAddSingleton<IMqttApplicationProvider, MqttApplicationProvider>();
+            services.AddManagedMqttServices<TMqttSettings>(mqttConfiguration);
+            services.AddSingleton<IConfigureMqttApplicationBuilder>(sp => new ConfigureMqttApplicationBuilder(configurator));
+            services.AddHostedService<MqttConsumerService<TMqttSettings>>();
 
             return services;
         }

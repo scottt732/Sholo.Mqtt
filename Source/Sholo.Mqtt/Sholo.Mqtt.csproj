@@ -12,10 +12,21 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="[3.0.0,6.0.0)" />
-    <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" Version="[3.0.0,6.0.0)" /> 
+    <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" Version="[3.0.0,6.0.0)" />
     <PackageReference Include="MQTTnet" Version="[3.0.11,4.0.0)" />
     <PackageReference Include="MQTTnet.Extensions.ManagedClient" Version="[3.0.11,4.0.0)" />
-    <PackageReference Include="Newtonsoft.Json" Version="[11.0.1,13.0.0)" />
+    <PackageReference Include="Newtonsoft.Json" Version="[12.0.1,13.0.0)" />
+    <PackageReference Include="System.Linq.Async" Version="[4.0.0,6.0.0)" />
+    <PackageReference Include="System.Reactive" Version="[4.0.0,6.0.0)" />
   </ItemGroup>
+
+  <Target Name="EmbedLocal" AfterTargets="MinVer" BeforeTargets="PrepareForBuild">
+    <WriteLinesToFile File="$(MSBuildProjectDirectory)\VERSION" Lines="$(MinVerVersion)" Overwrite="true" />
+    <ItemGroup>
+      <EmbeddedResource Include="$(MSBuildProjectDirectory)\VERSION">
+        <LogicalName>VERSION</LogicalName>
+      </EmbeddedResource>
+    </ItemGroup>
+  </Target>
 
 </Project>

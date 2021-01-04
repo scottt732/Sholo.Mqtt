@@ -1,95 +1,224 @@
 using System;
-using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MQTTnet;
+using MQTTnet.Client.Connecting;
+using MQTTnet.Client.Disconnecting;
 using MQTTnet.Client.Receiving;
 using MQTTnet.Extensions.ManagedClient;
+using Sholo.Mqtt.ApplicationProvider;
+using Sholo.Mqtt.Settings;
 
 namespace Sholo.Mqtt.Consumer
 {
-    public class MqttConsumerService<TManagedMqttSettings> : IHostedService
+    public sealed class MqttConsumerService<TManagedMqttSettings> : BackgroundService
         where TManagedMqttSettings : ManagedMqttSettings, new()
     {
-        protected IManagedMqttClientOptions MqttClientOptions { get; }
-        protected IManagedMqttClient MqttClient { get; }
-        protected IMqttApplication MqttApplication { get; }
-        protected IOptions<TManagedMqttSettings> MqttSettings { get; }
-        protected ILogger Logger { get; }
+        private IManagedMqttClient MqttClient { get; }
+        private IMqttApplicationProvider ApplicationProvider { get; }
+        private IServiceScopeFactory ServiceScopeFactory { get; }
+        private IManagedMqttClientOptions Options { get; }
+        private IOptions<TManagedMqttSettings> MqttSettings { get; }
+        private ILogger Logger { get; }
+
+        private bool IsShuttingDown => StoppingToken?.IsCancellationRequested ?? false;
+        private CancellationToken? StoppingToken { get; set; }
 
         public MqttConsumerService(
-            IManagedMqttClientOptions mqttClientOptions,
             IManagedMqttClient mqttClient,
-            IMqttApplication mqttApplication,
-            IOptions<TManagedMqttSettings> mqttOptions,
+            IMqttApplicationProvider applicationProvider,
+            IServiceScopeFactory serviceScopeFactory,
+            IManagedMqttClientOptions mqttClientOptions,
+            IOptions<TManagedMqttSettings> mqttSettings,
             ILogger<MqttConsumerService<TManagedMqttSettings>> logger)
         {
-            MqttClientOptions = mqttClientOptions;
             MqttClient = mqttClient;
-            MqttApplication = mqttApplication;
-            MqttSettings = mqttOptions;
+            ApplicationProvider = applicationProvider;
+            ServiceScopeFactory = serviceScopeFactory;
+            Options = mqttClientOptions;
+            MqttSettings = mqttSettings;
             Logger = logger;
+
+            MqttClient.ApplicationMessageProcessedHandler = new ApplicationMessageProcessedHandlerDelegate(OnApplicationMessageProcessed);
+            MqttClient.ApplicationMessageReceivedHandler = new MqttApplicationMessageReceivedHandlerDelegate(OnApplicationMessageReceived);
+            MqttClient.ApplicationMessageSkippedHandler = new ApplicationMessageSkippedHandlerDelegate(OnApplicationMessageSkipped);
+
+            MqttClient.ConnectedHandler = new MqttClientConnectedHandlerDelegate(OnConnected);
+            MqttClient.DisconnectedHandler = new MqttClientDisconnectedHandlerDelegate(OnDisconnected);
+            MqttClient.ConnectingFailedHandler = new ConnectingFailedHandlerDelegate(OnConnectingFailed);
+
+            MqttClient.SynchronizingSubscriptionsFailedHandler = new SynchronizingSubscriptionsFailedHandlerDelegate(OnSynchronizingSubscriptionsFailed);
+
+            ApplicationProvider.ApplicationChanged += OnApplicationChanged;
         }
 
-        public async Task StartAsync(CancellationToken cancellationToken)
+        public override void Dispose()
         {
-            MqttClient.ApplicationMessageReceivedHandler = new MqttApplicationMessageReceivedHandlerDelegate(async e => await ProcessMessage(e));
+            ApplicationProvider.ApplicationChanged -= OnApplicationChanged;
+            MqttClient?.Dispose();
+            base.Dispose();
+        }
 
-            Logger.LogInformation("Subscribing to {topicCount} topics:", MqttApplication.TopicFilters.Count);
-            foreach (var filter in MqttApplication.TopicFilters)
+        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+        {
+            using var blockUntilStopRequested = new SemaphoreSlim(0);
+
+            // ReSharper disable once AccessToDisposedClosure
+            stoppingToken.Register(() => blockUntilStopRequested.Release(1));
+
+            StoppingToken = stoppingToken;
+            Logger.LogInformation($"Connecting to MQTT broker at {MqttSettings.Value.Host}:{MqttSettings.Value.Port ?? 1883}...");
+
+            await MqttClient.StartAsync(Options);
+
+            await SubscribeToTopics(ApplicationProvider.Current?.TopicFilters);
+
+            var onlineMessage = MqttSettings.Value.GetOnlineApplicationMessage();
+            if (onlineMessage != null)
             {
-                Logger.LogInformation(" - {filter} (QoS={qos})", filter.Topic, filter.QualityOfServiceLevel);
+                Logger.LogInformation($"Sending online message to {onlineMessage.Topic}");
+                await MqttClient.PublishAsync(onlineMessage, stoppingToken);
             }
 
-            await MqttClient.SubscribeAsync(MqttApplication.TopicFilters);
-        }
+            await blockUntilStopRequested.WaitAsync(CancellationToken.None);
 
-        public async Task StopAsync(CancellationToken cancellationToken)
-        {
+            Logger.LogInformation("Shutting down MQTT broker connection...");
             await MqttClient.StopAsync();
         }
 
-        private async Task ProcessMessage(MqttApplicationMessageReceivedEventArgs e)
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "VSTHRD100:Avoid async void methods", Justification = "Event handler")]
+        private async void OnApplicationChanged(object sender, ApplicationChangedEventArgs e)
         {
-            try
+            Logger.LogWarning($"Application change detected.");
+            var previousTopicFilters = e.Previous?.TopicFilters;
+            var currentTopicFilters = e.Current?.TopicFilters;
+
+            await UnsubscribeTopics(previousTopicFilters);
+            await SubscribeToTopics(currentTopicFilters);
+        }
+
+        private void OnSynchronizingSubscriptionsFailed(ManagedProcessFailedEventArgs eventArgs)
+        {
+            Logger.LogError(eventArgs.Exception, $"Failed to synchronize subscriptions: {eventArgs.Exception.Message}");
+        }
+
+        private void OnConnectingFailed(ManagedProcessFailedEventArgs eventArgs)
+        {
+            if (eventArgs.Exception != null)
             {
-                var stopwatch = Stopwatch.StartNew();
-                var context = new MqttRequestContext(e.ApplicationMessage, e.ClientId);
-
-                if (MqttApplication.RequestDelegate != null)
-                {
-                    var success = false;
-                    try
-                    {
-                        success = await MqttApplication.RequestDelegate?.Invoke(context);
-
-                        if (success)
-                        {
-                            Logger.LogDebug("Request processed in {duration}.", stopwatch.ElapsedMilliseconds.ToString("N0") + "ms");
-                        }
-                        else
-                        {
-                            Logger.LogWarning("Request did not match any subscribed patterns");
-                        }
-                    }
-                    catch (Exception exc)
-                    {
-                        Logger.LogError(exc, "Request failed to process after {duration}.", stopwatch.ElapsedMilliseconds.ToString("N0") + "ms");
-                    }
-
-                    e.ProcessingFailed = !success;
-                }
-                else
-                {
-                    e.ProcessingFailed = true;
-                }
+                Logger.LogError(eventArgs.Exception, $"Failed to connect: {eventArgs.Exception.Message}");
             }
-            catch (Exception exc)
+            else
             {
-                Logger.LogError(exc, "  Unable to process request.  Ignoring: " + exc.Message);
+                Logger.LogError("Failed to connect");
+            }
+        }
+
+        private void OnDisconnected(MqttClientDisconnectedEventArgs eventArgs)
+        {
+            if (IsShuttingDown)
+            {
+                Logger.LogDebug("Disconnected due to shutdown request.");
+            }
+            else if (eventArgs.Exception != null)
+            {
+                Logger.LogError(eventArgs.Exception, $"Attempting to restore MQTT broker connection: {eventArgs.Exception.Message}");
+            }
+            else if (eventArgs.ClientWasConnected)
+            {
+                Logger.LogWarning("Attempting to restore MQTT broker connection...");
+            }
+            else
+            {
+                Logger.LogWarning("Attempting to restore MQTT broker connection...");
+            }
+
+            LogUnsuccessfulAuthenticationResult(eventArgs.AuthenticateResult);
+        }
+
+        private void OnConnected(MqttClientConnectedEventArgs eventArgs)
+        {
+            Logger.LogInformation("Connected to MQTT broker.");
+
+            LogUnsuccessfulAuthenticationResult(eventArgs.AuthenticateResult);
+        }
+
+        private async Task OnApplicationMessageReceived(MqttApplicationMessageReceivedEventArgs eventArgs)
+        {
+            var application = ApplicationProvider.Current;
+
+            if (application?.RequestDelegate == null)
+            {
+                eventArgs.ProcessingFailed = true;
+                return;
+            }
+
+            using (var scope = ServiceScopeFactory.CreateScope())
+            {
+                var success = false;
+                var context = new MqttRequestContext(scope.ServiceProvider, eventArgs.ApplicationMessage, eventArgs.ClientId);
+
+                try
+                {
+                    success = await application.RequestDelegate?.Invoke(context);
+                }
+                catch (Exception exc)
+                {
+                    Logger.LogError(exc, $"Request failed to process: {exc.Message}");
+                }
+
+                eventArgs.ProcessingFailed = !success;
+            }
+        }
+
+        private void OnApplicationMessageProcessed(ApplicationMessageProcessedEventArgs eventArgs)
+        {
+            Logger.LogDebug("Request processed.");
+        }
+
+        private void OnApplicationMessageSkipped(ApplicationMessageSkippedEventArgs eventArgs)
+        {
+            Logger.LogWarning("Request skipped.");
+        }
+
+        private async Task UnsubscribeTopics(MqttTopicFilter[] previousTopicFilters)
+        {
+            if (previousTopicFilters == null)
+            {
+                return;
+            }
+
+            var topics = previousTopicFilters.Select(x => x.Topic).ToArray();
+            await MqttClient.UnsubscribeAsync(topics);
+        }
+
+        private async Task SubscribeToTopics(MqttTopicFilter[] currentTopicFilters)
+        {
+            if (currentTopicFilters == null)
+            {
+                return;
+            }
+
+            await MqttClient.SubscribeAsync(currentTopicFilters);
+        }
+
+        private void LogUnsuccessfulAuthenticationResult(MqttClientAuthenticateResult authenticationResult)
+        {
+            if (!IsShuttingDown && authenticationResult != null && authenticationResult.ResultCode != MqttClientConnectResultCode.Success)
+            {
+                Logger.LogWarning(
+                    "Authentication Result: " +
+                    authenticationResult.ResultCode +
+                    (
+                        !string.IsNullOrEmpty(authenticationResult.ReasonString)
+                            ? $": {authenticationResult.ReasonString}"
+                            : string.Empty)
+                );
             }
         }
     }
