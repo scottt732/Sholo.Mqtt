@@ -3,12 +3,12 @@ using System.Text;
 
 namespace Sholo.Mqtt.Topics.FilterSanitizer
 {
-    public static class TopicFilterSanitizer
+    internal static class TopicFilterSanitizer
     {
-        public static string SanitizeTopic(string topicMask)
+        public static string SanitizeTopic(string topicPattern)
         {
-            var sb = new StringBuilder(topicMask.Length);
-            var parts = topicMask.Split('/');
+            var sb = new StringBuilder(topicPattern.Length);
+            var parts = topicPattern.Split('/');
 
             foreach (var part in parts)
             {

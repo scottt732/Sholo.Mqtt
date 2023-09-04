@@ -11,7 +11,7 @@ using MQTTnet.Client.Connecting;
 using MQTTnet.Client.Disconnecting;
 using MQTTnet.Client.Receiving;
 using MQTTnet.Extensions.ManagedClient;
-using Sholo.Mqtt.ApplicationProvider;
+using Sholo.Mqtt.Application.Provider;
 using Sholo.Mqtt.Settings;
 
 namespace Sholo.Mqtt.Consumer
@@ -66,22 +66,22 @@ namespace Sholo.Mqtt.Consumer
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            using var blockUntilStopRequested = new SemaphoreSlim(0);
+            var blockUntilStopRequested = new SemaphoreSlim(0);
 
             // ReSharper disable once AccessToDisposedClosure
             stoppingToken.Register(() => blockUntilStopRequested.Release(1));
 
             StoppingToken = stoppingToken;
-            Logger.LogInformation($"Connecting to MQTT broker at {MqttSettings.Value.Host}:{MqttSettings.Value.Port ?? 1883}...");
+            Logger.LogInformation("Connecting to MQTT broker at {Host}:{Port}...", MqttSettings.Value.Host, MqttSettings.Value.Port ?? 1883);
 
             await MqttClient.StartAsync(Options);
 
-            await SubscribeToTopics(ApplicationProvider.Current?.TopicFilters);
+            ApplicationProvider.Rebuild();
 
             var onlineMessage = MqttSettings.Value.GetOnlineApplicationMessage();
             if (onlineMessage != null)
             {
-                Logger.LogInformation($"Sending online message to {onlineMessage.Topic}");
+                Logger.LogInformation("Sending online message to {Topic}", onlineMessage.Topic);
                 await MqttClient.PublishAsync(onlineMessage, stoppingToken);
             }
 
@@ -89,29 +89,43 @@ namespace Sholo.Mqtt.Consumer
 
             Logger.LogInformation("Shutting down MQTT broker connection...");
             await MqttClient.StopAsync();
+
+            blockUntilStopRequested.Dispose();
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "VSTHRD100:Avoid async void methods", Justification = "Event handler")]
         private async void OnApplicationChanged(object sender, ApplicationChangedEventArgs e)
         {
-            Logger.LogWarning($"Application change detected.");
-            var previousTopicFilters = e.Previous?.TopicFilters;
-            var currentTopicFilters = e.Current?.TopicFilters;
+            var previousTopicFilters = e.Previous?.TopicFilters.ToArray() ?? Array.Empty<MqttTopicFilter>();
+            var currentTopicFilters = e.Current?.TopicFilters.ToArray() ?? Array.Empty<MqttTopicFilter>();
 
-            await UnsubscribeTopics(previousTopicFilters);
-            await SubscribeToTopics(currentTopicFilters);
+            if (previousTopicFilters.Any() || currentTopicFilters.Any())
+            {
+                // ReSharper disable once ConvertIfStatementToConditionalTernaryExpression
+                if (e.Previous == null)
+                {
+                    Logger.LogInformation("MQTT topic subscriptions:");
+                }
+                else
+                {
+                    Logger.LogInformation("Updating MQTT topic subscriptions");
+                }
+
+                await UnsubscribeTopics(previousTopicFilters);
+                await SubscribeToTopics(currentTopicFilters);
+            }
         }
 
         private void OnSynchronizingSubscriptionsFailed(ManagedProcessFailedEventArgs eventArgs)
         {
-            Logger.LogError(eventArgs.Exception, $"Failed to synchronize subscriptions: {eventArgs.Exception.Message}");
+            Logger.LogError(eventArgs.Exception, "Failed to synchronize subscriptions: {Message}", eventArgs.Exception.Message);
         }
 
         private void OnConnectingFailed(ManagedProcessFailedEventArgs eventArgs)
         {
             if (eventArgs.Exception != null)
             {
-                Logger.LogError(eventArgs.Exception, $"Failed to connect: {eventArgs.Exception.Message}");
+                Logger.LogError(eventArgs.Exception, "Failed to connect: {Message}", eventArgs.Exception.Message);
             }
             else
             {
@@ -127,7 +141,7 @@ namespace Sholo.Mqtt.Consumer
             }
             else if (eventArgs.Exception != null)
             {
-                Logger.LogError(eventArgs.Exception, $"Attempting to restore MQTT broker connection: {eventArgs.Exception.Message}");
+                Logger.LogError(eventArgs.Exception, "Attempting to restore MQTT broker connection: {Message}", eventArgs.Exception.Message);
             }
             else if (eventArgs.ClientWasConnected)
             {
@@ -138,14 +152,38 @@ namespace Sholo.Mqtt.Consumer
                 Logger.LogWarning("Attempting to restore MQTT broker connection...");
             }
 
-            LogUnsuccessfulAuthenticationResult(eventArgs.AuthenticateResult);
+            LogUnsuccessfulAuthenticationResult(eventArgs.Reason);
         }
 
         private void OnConnected(MqttClientConnectedEventArgs eventArgs)
         {
-            Logger.LogInformation("Connected to MQTT broker.");
+            Logger.LogInformation("Connected to MQTT broker:");
+            Logger.LogInformation("  Result .............................. {ResultCode}", eventArgs.ConnectResult.ResultCode);
+            Logger.LogInformation("  Session Present ..................... {IsSessionPresent}", eventArgs.ConnectResult.IsSessionPresent ? "Yes" : "No");
+            Logger.LogInformation("  Wildcard Subscription Available ..... {WildcardSubscriptionAvailable}", eventArgs.ConnectResult.WildcardSubscriptionAvailable ? "Yes" : "No");
+            Logger.LogInformation("  Retain Available .................... {RetainAvailable}", eventArgs.ConnectResult.RetainAvailable ? "Yes" : "No");
+            Logger.LogInformation("  Assigned Client Identifier .......... {AssignedClientIdentifier}", eventArgs.ConnectResult.AssignedClientIdentifier);
+            Logger.LogInformation("  Authentication Method ............... {AuthenticationMethod}", eventArgs.ConnectResult.AuthenticationMethod);
+            Logger.LogInformation("  Maximum Packet Size ................. {MaximumPacketSize}", eventArgs.ConnectResult.MaximumPacketSize);
+            Logger.LogInformation("  Reason .............................. {Reason}", eventArgs.ConnectResult.ReasonString);
+            Logger.LogInformation("  Receive Maximum ..................... {ReceiveMaximum}", eventArgs.ConnectResult.ReceiveMaximum);
+            Logger.LogInformation("  Maximum QoS ......................... {MaximumQoS}", eventArgs.ConnectResult.MaximumQoS);
+            Logger.LogInformation("  Response Information ................ {ReceiveMaximum}", eventArgs.ConnectResult.ResponseInformation);
+            Logger.LogInformation("  Topic Alias Maximum ................. {TopicAliasMaximum}", eventArgs.ConnectResult.TopicAliasMaximum == 0 ? "Not supported" : eventArgs.ConnectResult.TopicAliasMaximum);
+            Logger.LogInformation("  Server Reference .................... {ServerReference}", eventArgs.ConnectResult.ServerReference);
+            Logger.LogInformation("  Server Keep Alive ................... {ServerKeepAlive}", eventArgs.ConnectResult.ServerKeepAlive != null ? eventArgs.ConnectResult.ServerKeepAlive.Value.ToString() : "N/A");
+            Logger.LogInformation("  Session Expiry Interval ............. {SessionExpiryInterval}", eventArgs.ConnectResult.SessionExpiryInterval != null ? eventArgs.ConnectResult.SessionExpiryInterval.Value.ToString() : "N/A");
+            Logger.LogInformation("  Subscription Identifiers Available .. {SubscriptionIdentifiersAvailable}", eventArgs.ConnectResult.SubscriptionIdentifiersAvailable ? "Yes" : "No");
+            Logger.LogInformation("  Shared Subscription Available ....... {SharedSubscriptionAvailable}", eventArgs.ConnectResult.SharedSubscriptionAvailable ? "Yes" : "No");
+            Logger.LogInformation("  User Properties ..................... {HasUserProperties}", eventArgs.ConnectResult.UserProperties?.Count > 0 ? string.Empty : "N/A");
 
-            LogUnsuccessfulAuthenticationResult(eventArgs.AuthenticateResult);
+            if (eventArgs.ConnectResult.UserProperties?.Count > 0)
+            {
+                foreach (var userProperty in eventArgs.ConnectResult.UserProperties)
+                {
+                    Logger.LogInformation("    {Name}: {Value}", userProperty.Name, userProperty.Value);
+                }
+            }
         }
 
         private async Task OnApplicationMessageReceived(MqttApplicationMessageReceivedEventArgs eventArgs)
@@ -158,22 +196,27 @@ namespace Sholo.Mqtt.Consumer
                 return;
             }
 
-            using (var scope = ServiceScopeFactory.CreateScope())
+            using var scope = ServiceScopeFactory.CreateScope();
+
+            var context = new MqttRequestContext(scope.ServiceProvider, eventArgs.ApplicationMessage, eventArgs.ClientId);
+
+            var success = false;
+
+            try
             {
-                var success = false;
-                var context = new MqttRequestContext(scope.ServiceProvider, eventArgs.ApplicationMessage, eventArgs.ClientId);
+                success = await application.RequestDelegate?.Invoke(context);
 
-                try
+                if (!success)
                 {
-                    success = await application.RequestDelegate?.Invoke(context);
+                    Logger.LogWarning("No handler found for message on {Topic}", context.Topic);
                 }
-                catch (Exception exc)
-                {
-                    Logger.LogError(exc, $"Request failed to process: {exc.Message}");
-                }
-
-                eventArgs.ProcessingFailed = !success;
             }
+            catch (Exception exc)
+            {
+                Logger.LogError(exc, "Request failed to process: {Message}", exc.Message);
+            }
+
+            eventArgs.ProcessingFailed = !success;
         }
 
         private void OnApplicationMessageProcessed(ApplicationMessageProcessedEventArgs eventArgs)
@@ -204,21 +247,28 @@ namespace Sholo.Mqtt.Consumer
                 return;
             }
 
-            await MqttClient.SubscribeAsync(currentTopicFilters);
+            if (currentTopicFilters.Length > 0)
+            {
+                foreach (var topicFilter in currentTopicFilters)
+                {
+                    Logger.LogInformation(
+                        " - {Topic} | QoS={QoS} NoLocal={NoLocal} RetainAsPublished={RetainAsPublished} RetainHandling={RetainHandling}",
+                        topicFilter.Topic,
+                        topicFilter.QualityOfServiceLevel,
+                        topicFilter.NoLocal,
+                        topicFilter.RetainAsPublished,
+                        topicFilter.RetainHandling);
+                }
+
+                await MqttClient.SubscribeAsync(currentTopicFilters);
+            }
         }
 
-        private void LogUnsuccessfulAuthenticationResult(MqttClientAuthenticateResult authenticationResult)
+        private void LogUnsuccessfulAuthenticationResult(MqttClientDisconnectReason reason)
         {
-            if (!IsShuttingDown && authenticationResult != null && authenticationResult.ResultCode != MqttClientConnectResultCode.Success)
+            if (!IsShuttingDown && reason != MqttClientDisconnectReason.NormalDisconnection)
             {
-                Logger.LogWarning(
-                    "Authentication Result: " +
-                    authenticationResult.ResultCode +
-                    (
-                        !string.IsNullOrEmpty(authenticationResult.ReasonString)
-                            ? $": {authenticationResult.ReasonString}"
-                            : string.Empty)
-                );
+                Logger.LogWarning("Authentication Result: {Reason}", reason);
             }
         }
     }

@@ -1,7 +1,8 @@
+<!--EXTERNAL_PROPERTIES: MinVerVersion-->
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup Label="Build">
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFrameworks>net5.0;net6.0</TargetFrameworks>
   </PropertyGroup>
 
   <PropertyGroup Label="Package">
@@ -11,13 +12,38 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="[3.0.0,6.0.0)" />
-    <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" Version="[3.0.0,6.0.0)" />
-    <PackageReference Include="MQTTnet" Version="[3.0.11,4.0.0)" />
-    <PackageReference Include="MQTTnet.Extensions.ManagedClient" Version="[3.0.11,4.0.0)" />
-    <PackageReference Include="Newtonsoft.Json" Version="[12.0.1,13.0.0)" />
-    <PackageReference Include="System.Linq.Async" Version="[4.0.0,6.0.0)" />
-    <PackageReference Include="System.Reactive" Version="[4.0.0,6.0.0)" />
+    <None Remove="ModelBinding\IMqttValueProvider.cs.bak" />
+    <None Remove="ModelBinding\IMqttValueProviderFactory.cs.bak" />
+    <None Remove="ModelBinding\MqttHeaderValueProvider.cs.bak" />
+    <None Remove="ModelBinding\MqttValueProviderFactoryContext.cs.bak" />
+    <None Remove="ModelBinding\MqttValueProviderResult.cs.bak" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net5.0' ">
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="[5.0.0,)" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="[5.0.0,)" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="[5.0.0,)" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="[5.0.0,)" />
+    <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" Version="[5.0.0,)" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net6.0' ">
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="[6.0.0,)" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="[6.0.0,)" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="[6.0.0,)" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="[6.0.0,)" />
+    <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" Version="[6.0.0,)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MQTTnet" Version="[3.1.0,4.0.0)" />
+    <PackageReference Include="MQTTnet.Extensions.ManagedClient" Version="[3.1.0,4.0.0)" />
+    <PackageReference Include="Newtonsoft.Json" Version="[12.0.1,)" />
+    <PackageReference Include="System.Linq.Async" Version="[5.0.0,)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="TypeConverters\CorrelationData\" />
   </ItemGroup>
 
   <Target Name="EmbedLocal" AfterTargets="MinVer" BeforeTargets="PrepareForBuild">

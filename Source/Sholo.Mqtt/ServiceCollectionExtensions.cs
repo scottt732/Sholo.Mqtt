@@ -1,151 +1,160 @@
 using System;
-using System.Threading;
 using JetBrains.Annotations;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MQTTnet;
-using MQTTnet.Client;
 using MQTTnet.Client.Options;
 using MQTTnet.Extensions.ManagedClient;
 using MQTTnet.Formatter;
 using MQTTnet.Server;
-using Sholo.Mqtt.ApplicationBuilder;
-using Sholo.Mqtt.ApplicationBuilderConfiguration;
-using Sholo.Mqtt.ApplicationProvider;
+using Sholo.Mqtt.Application.Provider;
 using Sholo.Mqtt.Consumer;
+using Sholo.Mqtt.DependencyInjection;
+using Sholo.Mqtt.Internal;
 using Sholo.Mqtt.Settings;
+using Sholo.Mqtt.TypeConverters;
+using Sholo.Mqtt.TypeConverters.NewtonsoftJson;
+using Sholo.Mqtt.TypeConverters.Payload.NewtonsoftJson;
 
-namespace Sholo.Mqtt
+namespace Sholo.Mqtt;
+
+[PublicAPI]
+public static class ServiceCollectionExtensions
 {
-    [PublicAPI]
-    public static class ServiceCollectionExtensions
+    public static IMqttServiceCollection AddMqttServices<TMqttSettings>(this IServiceCollection services, string configurationName)
+        where TMqttSettings : MqttSettings, new()
     {
-        public static IServiceCollection AddMqttServices(this IServiceCollection services, IConfiguration mqttConfiguration)
-            => services.AddMqttServices<MqttSettings>(mqttConfiguration);
+        services.AddOptions<TMqttSettings>()
+            .BindConfiguration(configurationName)
+            .ValidateDataAnnotations();
 
-        public static IServiceCollection AddMqttServices<TMqttSettings>(this IServiceCollection services, IConfiguration mqttConfiguration)
-            where TMqttSettings : MqttSettings, new()
+        services.AddSingleton(sp =>
         {
-            services.AddOptions<TMqttSettings>()
-                .Bind(mqttConfiguration)
-                .ValidateDataAnnotations();
+            var mqttSettings = sp.GetRequiredService<IOptions<TMqttSettings>>().Value;
 
-            services.AddSingleton(sp =>
+            var mqttClientOptionsBuilder = new MqttClientOptionsBuilder()
+                .WithTcpServer(mqttSettings.Host, mqttSettings.Port)
+                .WithProtocolVersion(mqttSettings.MqttProtocolVersion ?? MqttProtocolVersion.V500);
+
+            if (mqttSettings.ClientId != null)
             {
-                var mqttSettings = sp.GetRequiredService<IOptions<TMqttSettings>>().Value;
+                mqttClientOptionsBuilder = mqttClientOptionsBuilder.WithClientId(mqttSettings.ClientId);
+            }
 
-                var mqttClientOptionsBuilder = new MqttClientOptionsBuilder()
-                    .WithTcpServer(mqttSettings.Host, mqttSettings.Port)
-                    .WithProtocolVersion(mqttSettings.MqttProtocolVersion ?? MqttProtocolVersion.V500);
-
-                if (mqttSettings.ClientId != null)
-                {
-                    mqttClientOptionsBuilder = mqttClientOptionsBuilder.WithClientId(mqttSettings.ClientId);
-                }
-
-                if (mqttSettings.CommunicationTimeout.HasValue)
-                {
-                    mqttClientOptionsBuilder = mqttClientOptionsBuilder.WithCommunicationTimeout(mqttSettings.CommunicationTimeout.Value);
-                }
-
-                mqttClientOptionsBuilder = mqttSettings.KeepAliveInterval.HasValue ?
-                    mqttClientOptionsBuilder.WithKeepAlivePeriod(mqttSettings.KeepAliveInterval.Value) :
-                    mqttClientOptionsBuilder.WithNoKeepAlive();
-
-                var lastWillAndTestamentMessage = mqttSettings.GetLastWillAndTestamentApplicationMessage();
-                if (lastWillAndTestamentMessage != null)
-                {
-                    mqttClientOptionsBuilder = mqttClientOptionsBuilder.WithWillMessage(lastWillAndTestamentMessage);
-                }
-
-                return mqttClientOptionsBuilder.Build();
-            });
-
-            services.AddSingleton<IMqttFactory, MqttFactory>();
-            services.AddTransient(sp =>
+            if (mqttSettings.CommunicationTimeout.HasValue)
             {
-                var factory = sp.GetRequiredService<IMqttFactory>();
-                var client = factory.CreateMqttClient();
-                return client;
-            });
+                mqttClientOptionsBuilder = mqttClientOptionsBuilder.WithCommunicationTimeout(mqttSettings.CommunicationTimeout.Value);
+            }
 
-            return services;
-        }
+            mqttClientOptionsBuilder = mqttSettings.KeepAliveInterval.HasValue ?
+                mqttClientOptionsBuilder.WithKeepAlivePeriod(mqttSettings.KeepAliveInterval.Value) :
+                mqttClientOptionsBuilder.WithNoKeepAlive();
 
-        public static IServiceCollection AddManagedMqttServices<TMqttSettings>(this IServiceCollection services, IConfiguration mqttConfiguration)
-            where TMqttSettings : ManagedMqttSettings, new()
+            var lastWillAndTestamentMessage = mqttSettings.GetLastWillAndTestamentApplicationMessage();
+            if (lastWillAndTestamentMessage != null)
+            {
+                mqttClientOptionsBuilder = mqttClientOptionsBuilder.WithWillMessage(lastWillAndTestamentMessage);
+            }
+
+            var mqttClientOptions = mqttClientOptionsBuilder.Build();
+
+            return mqttClientOptions;
+        });
+
+        services.AddSingleton<IMqttFactory, MqttFactory>();
+        services.AddTransient(sp =>
         {
-            services.AddMqttServices<TMqttSettings>(mqttConfiguration);
+            var factory = sp.GetRequiredService<IMqttFactory>();
+            var client = factory.CreateMqttClient();
+            return client;
+        });
 
-            services.AddSingleton<IManagedMqttClientOptions>(sp =>
-            {
-                var managedMqttClientStorage = sp.GetService<IManagedMqttClientStorage>();
-                var mqttManagedSettings = sp.GetRequiredService<IOptions<TMqttSettings>>().Value;
-                var mqttClientOptions = sp.GetRequiredService<IMqttClientOptions>();
+        return new MqttServiceCollection(services);
+    }
 
-                var managedMqttClientOptionsBuilder = new ManagedMqttClientOptionsBuilder()
-                    .WithClientOptions(mqttClientOptions)
-                    .WithPendingMessagesOverflowStrategy(mqttManagedSettings.PendingMessagesOverflowStrategy ?? MqttPendingMessagesOverflowStrategy.DropNewMessage)
-                    .WithAutoReconnectDelay(mqttManagedSettings.AutoReconnectDelay ?? TimeSpan.FromSeconds(5.0))
-                    .WithMaxPendingMessages(mqttManagedSettings.MaxPendingMessages ?? int.MaxValue);
+    public static IMqttServiceCollection AddManagedMqttServices<TMqttSettings>(this IServiceCollection services, string configurationName)
+        where TMqttSettings : ManagedMqttSettings, new()
+    {
+        services.AddMqttServices<TMqttSettings>(configurationName);
 
-                if (managedMqttClientStorage != null)
-                {
-                    managedMqttClientOptionsBuilder = managedMqttClientOptionsBuilder.WithStorage(managedMqttClientStorage);
-                }
-
-                var managedMqttClientOptions = managedMqttClientOptionsBuilder.Build();
-
-                return managedMqttClientOptions;
-            });
-
-            services.AddSingleton(sp =>
-            {
-                var factory = sp.GetRequiredService<IMqttFactory>();
-                var mqttClient = factory.CreateManagedMqttClient();
-                return mqttClient;
-            });
-
-            return services;
-        }
-
-        public static IServiceCollection AddManagedMqttServices<TMqttSettings, TStorage>(this IServiceCollection services, IConfiguration mqttConfiguration)
-            where TMqttSettings : ManagedMqttSettings, new()
-            where TStorage : class, IManagedMqttClientStorage
+        services.AddSingleton<IManagedMqttClientOptions>(sp =>
         {
-            services.AddSingleton<IManagedMqttClientStorage, TStorage>();
-            services.AddManagedMqttServices<TMqttSettings>(mqttConfiguration);
+            var managedMqttClientStorage = sp.GetService<IManagedMqttClientStorage>();
+            var mqttManagedSettings = sp.GetRequiredService<IOptions<TMqttSettings>>().Value;
+            var mqttClientOptions = sp.GetRequiredService<IMqttClientOptions>();
 
-            return services;
-        }
+            var managedMqttClientOptionsBuilder = new ManagedMqttClientOptionsBuilder()
+                .WithClientOptions(mqttClientOptions)
+                .WithPendingMessagesOverflowStrategy(mqttManagedSettings.PendingMessagesOverflowStrategy ?? MqttPendingMessagesOverflowStrategy.DropNewMessage)
+                .WithAutoReconnectDelay(mqttManagedSettings.AutoReconnectDelay ?? TimeSpan.FromSeconds(5.0))
+                .WithMaxPendingMessages(mqttManagedSettings.MaxPendingMessages ?? int.MaxValue);
 
-        public static IServiceCollection AddMqttConsumerService(
-            this IServiceCollection services,
-            IConfiguration mqttConfiguration = null,
-            Action<IMqttApplicationBuilder> configurator = null
-        )
-            => services.AddMqttConsumerService<ManagedMqttSettings>(
-                mqttConfiguration,
-                configurator
-            );
+            if (managedMqttClientStorage != null)
+            {
+                managedMqttClientOptionsBuilder = managedMqttClientOptionsBuilder.WithStorage(managedMqttClientStorage);
+            }
 
-        public static IServiceCollection AddMqttConsumerService<TMqttSettings>(
-            this IServiceCollection services,
-            IConfiguration mqttConfiguration = null,
-            Action<IMqttApplicationBuilder> configurator = null
-        )
-            where TMqttSettings : ManagedMqttSettings, new()
+            var managedMqttClientOptions = managedMqttClientOptionsBuilder.Build();
+
+            return managedMqttClientOptions;
+        });
+
+        services.AddSingleton(sp =>
         {
-            services.TryAddSingleton<IMqttApplicationProvider, MqttApplicationProvider>();
-            services.AddManagedMqttServices<TMqttSettings>(mqttConfiguration);
-            services.AddSingleton<IConfigureMqttApplicationBuilder>(sp => new ConfigureMqttApplicationBuilder(configurator));
-            services.AddHostedService<MqttConsumerService<TMqttSettings>>();
+            var factory = sp.GetRequiredService<IMqttFactory>();
+            var mqttClient = factory.CreateManagedMqttClient();
+            return mqttClient;
+        });
 
-            return services;
-        }
+        return new MqttServiceCollection(services);
+    }
+
+    public static IMqttServiceCollection AddManagedMqttServices<TMqttSettings, TStorage>(this IServiceCollection services, string configurationName)
+        where TMqttSettings : ManagedMqttSettings, new()
+        where TStorage : class, IManagedMqttClientStorage
+    {
+        services.AddSingleton<IManagedMqttClientStorage, TStorage>();
+        services.AddManagedMqttServices<TMqttSettings>(configurationName);
+
+        return new MqttServiceCollection(services);
+    }
+
+    public static IMqttServiceCollection AddMqttConsumerService<TMqttSettings>(
+        this IServiceCollection services,
+        string configurationName
+    )
+        where TMqttSettings : ManagedMqttSettings, new()
+    {
+        services.TryAddSingleton<ITypeActivatorCache, TypeActivatorCache>();
+        services.TryAddSingleton<IControllerActivator, DefaultControllerActivator>();
+        services.TryAddSingleton<IRouteProvider, RouteProvider>();
+
+        services.TryAddSingleton<IMqttApplicationProvider, MqttApplicationProvider>();
+        services.AddManagedMqttServices<TMqttSettings>(configurationName);
+        services.AddHostedService<MqttConsumerService<TMqttSettings>>();
+
+        return new MqttServiceCollection(services);
+    }
+
+    public static IMqttServiceCollection AddMqttConsumerService(
+        this IServiceCollection services,
+        string configurationName
+    )
+        => services.AddMqttConsumerService<ManagedMqttSettings>(configurationName);
+
+    public static IMqttServiceCollection AddNewtonsoftJsonPayloadConverter(
+        this IMqttServiceCollection services,
+        Action<NewtonsoftJsonTypeConverterOptions> configuration = null)
+    {
+        services.Configure<NewtonsoftJsonTypeConverterOptions>(opt =>
+        {
+            configuration?.Invoke(opt);
+        });
+
+        services.TryAddSingleton<NewtonsoftJsonTypeConverter>();
+        services.TryAddSingleton<IMqttRequestPayloadTypeConverter>(sp => sp.GetRequiredService<NewtonsoftJsonTypeConverter>());
+
+        return services;
     }
 }

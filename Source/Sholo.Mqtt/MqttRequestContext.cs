@@ -1,28 +1,27 @@
 using System;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using JetBrains.Annotations;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using MQTTnet;
+using MQTTnet.Client.Publishing;
+using MQTTnet.Extensions.ManagedClient;
 using MQTTnet.Packets;
 using MQTTnet.Protocol;
 
 namespace Sholo.Mqtt
 {
     [PublicAPI]
-    public class MqttRequestContext<TTopicParameters> : MqttRequestContext, IMqttRequestContext<TTopicParameters>
-        where TTopicParameters : class, new()
+    public class MqttRequestContext
     {
-        public TTopicParameters TopicParameters { get; }
-
-        public MqttRequestContext(IMqttRequestContext context, TTopicParameters topicParameters)
-            : base(context)
+        internal Endpoint GetEndpoint()
         {
-            TopicParameters = topicParameters;
+            var routeProvider = ServiceProvider.GetRequiredService<IRouteProvider>();
+            return routeProvider.GetEndpoint(this);
         }
-    }
 
-    [PublicAPI]
-    public class MqttRequestContext : IMqttRequestContext
-    {
         public IServiceProvider ServiceProvider { get; }
         public string Topic { get; }
         public byte[] Payload { get; }
@@ -37,8 +36,34 @@ namespace Sholo.Mqtt
         public byte[] CorrelationData { get; }
         public uint[] SubscriptionIdentifiers { get; }
         public string ClientId { get; }
+        public CancellationToken ShutdownToken => ShutdownTokenFactory.Value;
 
-        public MqttRequestContext(
+        private Lazy<IApplicationMessagePublisher> ClientFactory { get; }
+        private Lazy<IHostApplicationLifetime> HostApplicationLifetimeFactory { get; }
+        private Lazy<CancellationToken> ShutdownTokenFactory { get; }
+
+        private IApplicationMessagePublisher Client => ClientFactory.Value;
+
+        public MqttRequestContext(MqttRequestContext context)
+            : this()
+        {
+            ServiceProvider = context.ServiceProvider;
+            Topic = context.Topic;
+            Payload = context.Payload;
+            QualityOfServiceLevel = context.QualityOfServiceLevel;
+            Retain = context.Retain;
+            UserProperties = context.UserProperties.ToArray();
+            ContentType = context.ContentType;
+            ResponseTopic = context.ResponseTopic;
+            PayloadFormatIndicator = context.PayloadFormatIndicator;
+            MessageExpiryInterval = context.MessageExpiryInterval;
+            TopicAlias = context.TopicAlias;
+            CorrelationData = context.CorrelationData;
+            SubscriptionIdentifiers = context.SubscriptionIdentifiers.ToArray();
+            ClientId = context.ClientId;
+        }
+
+        internal MqttRequestContext(
             IServiceProvider serviceProvider,
             string topic,
             byte[] payload,
@@ -47,63 +72,67 @@ namespace Sholo.Mqtt
             MqttUserProperty[] userProperties,
             string contentType,
             string responseTopic,
-            MqttPayloadFormatIndicator? payloadFormatIndicator,
+            MqttPayloadFormatIndicator payloadFormatIndicator,
             uint? messageExpiryInterval,
             ushort? topicAlias,
             byte[] correlationData,
             uint[] subscriptionIdentifiers,
-            string clientId)
+            string clientId
+        )
+            : this()
         {
             ServiceProvider = serviceProvider;
             Topic = topic;
             Payload = payload;
             QualityOfServiceLevel = qualityOfServiceLevel;
             Retain = retain;
-            UserProperties = userProperties;
+            UserProperties = userProperties ?? Array.Empty<MqttUserProperty>();
             ContentType = contentType;
             ResponseTopic = responseTopic;
             PayloadFormatIndicator = payloadFormatIndicator;
             MessageExpiryInterval = messageExpiryInterval;
             TopicAlias = topicAlias;
             CorrelationData = correlationData;
-            SubscriptionIdentifiers = subscriptionIdentifiers;
+            SubscriptionIdentifiers = subscriptionIdentifiers ?? Array.Empty<uint>();
             ClientId = clientId;
         }
 
-        public MqttRequestContext(IMqttRequestContext context)
-        {
-            ServiceProvider = context.ServiceProvider;
-            ContentType = context.ContentType;
-            CorrelationData = context.CorrelationData;
-            MessageExpiryInterval = context.MessageExpiryInterval;
-            Payload = context.Payload;
-            PayloadFormatIndicator = context.PayloadFormatIndicator;
-            QualityOfServiceLevel = context.QualityOfServiceLevel;
-            ResponseTopic = context.ResponseTopic;
-            Retain = context.Retain;
-            SubscriptionIdentifiers = context.SubscriptionIdentifiers?.ToArray() ?? Array.Empty<uint>();
-            Topic = context.Topic;
-            TopicAlias = context.TopicAlias;
-            UserProperties = context.UserProperties?.ToArray() ?? Array.Empty<MqttUserProperty>();
-            ClientId = context.ClientId;
-        }
-
-        public MqttRequestContext(IServiceProvider serviceProvider, MqttApplicationMessage message, string clientId)
+        internal MqttRequestContext(IServiceProvider serviceProvider, MqttApplicationMessage message, string clientId)
+            : this()
         {
             ServiceProvider = serviceProvider;
-            ContentType = message.ContentType;
-            CorrelationData = message.CorrelationData;
-            MessageExpiryInterval = message.MessageExpiryInterval;
-            Payload = message.Payload;
-            PayloadFormatIndicator = message.PayloadFormatIndicator;
-            QualityOfServiceLevel = message.QualityOfServiceLevel;
-            ResponseTopic = message.ResponseTopic;
-            Retain = message.Retain;
-            SubscriptionIdentifiers = message.SubscriptionIdentifiers?.ToArray() ?? Array.Empty<uint>();
             Topic = message.Topic;
-            TopicAlias = message.TopicAlias;
+            Payload = message.Payload;
+            QualityOfServiceLevel = message.QualityOfServiceLevel;
+            Retain = message.Retain;
             UserProperties = message.UserProperties?.ToArray() ?? Array.Empty<MqttUserProperty>();
+            ContentType = message.ContentType;
+            ResponseTopic = message.ResponseTopic;
+            PayloadFormatIndicator = message.PayloadFormatIndicator;
+            MessageExpiryInterval = message.MessageExpiryInterval;
+            TopicAlias = message.TopicAlias;
+            CorrelationData = message.CorrelationData;
+            SubscriptionIdentifiers = message.SubscriptionIdentifiers?.ToArray() ?? Array.Empty<uint>();
             ClientId = clientId;
+        }
+
+        private MqttRequestContext()
+        {
+            ClientFactory = new Lazy<IApplicationMessagePublisher>(() => ServiceProvider.GetRequiredService<IManagedMqttClient>());
+            HostApplicationLifetimeFactory = new Lazy<IHostApplicationLifetime>(() => ServiceProvider.GetService<IHostApplicationLifetime>());
+            ShutdownTokenFactory = new Lazy<CancellationToken>(() => HostApplicationLifetimeFactory.Value?.ApplicationStopping ?? default);
+        }
+
+        public Task<MqttClientPublishResult> PublishAsync(
+            MqttApplicationMessage message,
+            CancellationToken cancellationToken = default)
+        {
+            if (message == null)
+            {
+                throw new ArgumentNullException(nameof(message));
+            }
+
+            return Client.PublishAsync(message, cancellationToken);
         }
     }
 }

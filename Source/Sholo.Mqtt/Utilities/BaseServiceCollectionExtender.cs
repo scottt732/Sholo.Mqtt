@@ -4,7 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Sholo.Mqtt.Utilities
 {
-    internal abstract class BaseServiceCollectionExtender : IServiceCollection
+    public abstract class BaseServiceCollectionExtender : IServiceCollection
     {
         public int Count => Target.Count;
         public bool IsReadOnly => Target.IsReadOnly;

@@ -6,30 +6,24 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="AutoFixture.AutoMoq" Version="4.14.0" />
-    <PackageReference Include="AutoFixture.Xunit2" Version="4.14.0" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.8.0" />
-    <PackageReference Include="Microsoft.Reactive.Testing" Version="4.4.1" />
-    <PackageReference Update="Moq" Version="4.15.2" />
+    <PackageReference Include="AutoFixture.AutoMoq" Version="4.17.0" />
+    <PackageReference Include="AutoFixture.Xunit2" Version="4.17.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.0.0" />
+    <PackageReference Include="Microsoft.Reactive.Testing" Version="5.0.0" />
+    <PackageReference Include="Xunit.Combinatorial" Version="1.4.1" />
+    <PackageReference Update="Moq" Version="4.16.1" />
     <PackageReference Include="xunit" Version="2.4.1" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.2">
+    <PackageReference Include="xunit.runner.visualstudio" PrivateAssets="All" Version="2.4.3">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="coverlet.collector" Version="3.1.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="coverlet.collector" Version="1.3.0">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-  </ItemGroup>
-
-  <ItemGroup Label="Project References">
-    <ProjectReference Include="..\..\Source\Sholo.Mqtt\Sholo.Mqtt.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="RequestProcessor\" />
-    <Folder Include="Topics\BinderFactoryBuilder\" />
-    <Folder Include="Topics\FilterSanitizer\" />
+    <ProjectReference Include="..\..\Source\Sholo.Mqtt\Sholo.Mqtt.csproj" />
   </ItemGroup>
 
 </Project>

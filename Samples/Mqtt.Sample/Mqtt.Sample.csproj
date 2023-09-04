@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net6.0</TargetFramework>
+    <UserSecretsId>803487c6-0461-4b15-bb43-724f2057386b</UserSecretsId>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Using Include="Microsoft.Extensions.Configuration" />
+    <Using Include="Microsoft.Extensions.Hosting" />
+    <Using Include="Sholo.Mqtt" />
+    <Using Include="Sholo.Mqtt.Application.Builder" />
+    <Using Include="Sholo.Mqtt.Hosting" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="MqttApplicationPart" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="6.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Source\Sholo.Mqtt\Sholo.Mqtt.csproj" />
+  </ItemGroup>
+
+</Project>
