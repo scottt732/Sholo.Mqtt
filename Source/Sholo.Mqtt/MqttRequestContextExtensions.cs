@@ -1,16 +1,14 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using JetBrains.Annotations;
 using MQTTnet;
-using MQTTnet.Client.Publishing;
 
 namespace Sholo.Mqtt;
 
 [PublicAPI]
 public static class MqttRequestContextExtensions
 {
-    public static Task<MqttClientPublishResult> PublishAsync(
+    public static Task PublishAsync(
         this MqttRequestContext requestContext,
         Action<MqttApplicationMessageBuilder> messageBuilder,
         CancellationToken cancellationToken = default)
@@ -32,7 +30,7 @@ public static class MqttRequestContextExtensions
         return requestContext.PublishAsync(message, cancellationToken);
     }
 
-    public static Task<MqttClientPublishResult> RespondAsync(
+    public static Task RespondAsync(
         this MqttRequestContext requestContext,
         MqttApplicationMessage message,
         CancellationToken cancellationToken = default)
@@ -53,7 +51,7 @@ public static class MqttRequestContextExtensions
         return requestContext.PublishAsync(message, cancellationToken);
     }
 
-    public static Task<MqttClientPublishResult> RespondAsync(
+    public static Task RespondAsync(
         this MqttRequestContext requestContext,
         Action<MqttApplicationMessageBuilder> messageBuilder,
         CancellationToken cancellationToken = default)

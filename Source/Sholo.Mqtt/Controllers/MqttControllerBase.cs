@@ -1,8 +1,7 @@
-namespace Sholo.Mqtt.Controllers
+namespace Sholo.Mqtt.Controllers;
+
+[MqttController]
+public abstract class MqttControllerBase
 {
-    [MqttController]
-    public abstract class MqttControllerBase
-    {
-        public MqttRequestContext Request { get; internal set; }
-    }
+    public MqttRequestContext Request { get; internal set; }
 }

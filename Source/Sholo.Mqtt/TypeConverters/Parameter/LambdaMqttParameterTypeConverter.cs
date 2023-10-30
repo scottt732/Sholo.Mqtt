@@ -1,29 +1,28 @@
 using System;
 
-namespace Sholo.Mqtt.TypeConverters.Parameter
+namespace Sholo.Mqtt.TypeConverters.Parameter;
+
+internal class LambdaMqttParameterTypeConverter<TTargetType> : IMqttParameterTypeConverter
 {
-    internal class LambdaMqttParameterTypeConverter<TTargetType> : IMqttParameterTypeConverter
+    public Func<string, TTargetType> Converter { get; }
+
+    public LambdaMqttParameterTypeConverter(Func<string, TTargetType> converter)
     {
-        public Func<string, TTargetType> Converter { get; }
+        Converter = converter;
+    }
 
-        public LambdaMqttParameterTypeConverter(Func<string, TTargetType> converter)
+    public bool TryConvert(string value, Type targetType, out object result)
+    {
+        try
         {
-            Converter = converter;
+            var typedResult = Converter.Invoke(value);
+            result = typedResult;
+            return true;
         }
-
-        public bool TryConvert(string value, Type targetType, out object result)
+        catch
         {
-            try
-            {
-                var typedResult = Converter.Invoke(value);
-                result = typedResult;
-                return true;
-            }
-            catch
-            {
-                result = default;
-                return false;
-            }
+            result = default;
+            return false;
         }
     }
 }

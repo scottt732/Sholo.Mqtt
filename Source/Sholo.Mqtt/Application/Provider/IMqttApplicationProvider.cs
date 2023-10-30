@@ -1,12 +1,11 @@
 using System;
 
-namespace Sholo.Mqtt.Application.Provider
-{
-    public interface IMqttApplicationProvider
-    {
-        event EventHandler<ApplicationChangedEventArgs> ApplicationChanged;
+namespace Sholo.Mqtt.Application.Provider;
 
-        void Rebuild();
-        IMqttApplication Current { get; }
-    }
+public interface IMqttApplicationProvider
+{
+    event EventHandler<ApplicationChangedEventArgs> ApplicationChanged;
+
+    void Rebuild();
+    IMqttApplication Current { get; }
 }

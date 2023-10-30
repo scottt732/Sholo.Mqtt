@@ -1,9 +1,8 @@
 using Sholo.Mqtt.Application.Builder;
 
-namespace Sholo.Mqtt.Application.BuilderConfiguration
+namespace Sholo.Mqtt.Application.BuilderConfiguration;
+
+public interface IConfigureMqttApplicationBuilder
 {
-    public interface IConfigureMqttApplicationBuilder
-    {
-        void ConfigureMqttApplication(IMqttApplicationBuilder mqttApplicationBuilder);
-    }
+    void ConfigureMqttApplication(IMqttApplicationBuilder mqttApplicationBuilder);
 }

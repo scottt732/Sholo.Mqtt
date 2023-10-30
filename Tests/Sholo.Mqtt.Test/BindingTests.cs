@@ -1,12 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+namespace Sholo.Mqtt.Test;
 
-namespace Sholo.Mqtt.Test
+internal sealed class BindingTests
 {
-    internal class BindingTests
-    {
-    }
 }

@@ -4,5 +4,5 @@ namespace Sholo.Mqtt.TypeConverters;
 
 public interface IMqttRequestPayloadTypeConverter
 {
-    bool TryConvertPayload(byte[] payloadData, Type targetType, out object result);
+     bool TryConvertPayload(ArraySegment<byte> payloadData, Type targetType, out object result);
 }

@@ -2,55 +2,52 @@ using System.Reflection;
 using System.Threading;
 using Sholo.Mqtt.Topics.PatternFilter;
 
-namespace Sholo.Mqtt
+namespace Sholo.Mqtt;
+
+[PublicAPI]
+public class Endpoint
 {
-    public class Endpoint
+    public MethodInfo Action { get; }
+    public IMqttTopicPatternFilter TopicPatternFilter { get; }
+    public MqttRequestDelegate RequestDelegate { get; }
+
+    public Endpoint(
+        MethodInfo action,
+        IMqttTopicPatternFilter topicPatternFilter,
+        MqttRequestDelegate requestDelegate)
     {
-        public MethodInfo Action { get; }
-        public IMqttTopicPatternFilter TopicPatternFilter { get; }
-        public MqttRequestDelegate RequestDelegate { get; }
+        Action = action;
+        TopicPatternFilter = topicPatternFilter;
+        RequestDelegate = requestDelegate;
+    }
 
-        public Endpoint(
-            MethodInfo action,
-            IMqttTopicPatternFilter topicPatternFilter,
-            MqttRequestDelegate requestDelegate)
+    public bool IsMatch(MqttRequestContext context)
+    {
+        if (TopicPatternFilter.IsMatch(context.Topic, out var topicParameters)
+            && TopicPatternFilter.TopicFilter.QualityOfServiceLevel == context.QualityOfServiceLevel)
         {
-            Action = action;
-            TopicPatternFilter = topicPatternFilter;
-            RequestDelegate = requestDelegate;
-        }
+            var actionParameters = Action.GetParameters();
+            var requiredArguments = actionParameters.Length;
 
-        public bool IsMatch(MqttRequestContext context)
-        {
-            if (TopicPatternFilter.IsMatch(context.Topic, out var topicParameters)
-                && TopicPatternFilter.QualityOfServiceLevel == context.QualityOfServiceLevel)
+            foreach (var actionParameter in actionParameters)
             {
-                var actionParameters = Action.GetParameters();
-                var requiredArguments = actionParameters.Length;
+                var parameterName = actionParameter.Name;
 
-                foreach (var actionParameter in actionParameters)
+                if (parameterName == null)
                 {
-                    var parameterName = actionParameter.Name;
-
-                    if (topicParameters.TryGetValue(parameterName, out _))
-                    {
-                        requiredArguments--;
-                    }
-                    else if (actionParameter.ParameterType == typeof(CancellationToken))
-                    {
-                        requiredArguments--;
-                    }
-                    else
-                    {
-                        if (context.ServiceProvider.GetService(actionParameter.ParameterType) != null)
-                        {
-                            requiredArguments--;
-                        }
-                        else
-                        {
-                            continue;
-                        }
-                    }
+                    // TODO: Double check
+                }
+                else if (topicParameters.TryGetValue(parameterName, out _))
+                {
+                    requiredArguments--;
+                }
+                else if (actionParameter.ParameterType == typeof(CancellationToken))
+                {
+                    requiredArguments--;
+                }
+                else if (context.ServiceProvider.GetService(actionParameter.ParameterType) != null)
+                {
+                    requiredArguments--;
                 }
 
                 // TODO: Better handling for when the request has a model (was break instead of continue above, requiredArguments == 0)
@@ -59,8 +56,8 @@ namespace Sholo.Mqtt
                     return true;
                 }
             }
-
-            return false;
         }
+
+        return false;
     }
 }

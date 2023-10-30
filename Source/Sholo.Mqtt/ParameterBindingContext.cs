@@ -66,30 +66,17 @@ public class ParameterBindingContext : ParametersBindingContext
                 result = default;
                 return true;
             }
-            else if (ActionParameter.ParameterType.IsValueType && Nullable.GetUnderlyingType(ActionParameter.ParameterType) != null)
+
+            if (ActionParameter.ParameterType.IsValueType && Nullable.GetUnderlyingType(ActionParameter.ParameterType) != null)
             {
                 result = null;
                 return true;
             }
-            else
-            {
-                result = default;
-                return false;
-            }
         }
 
-        if (DefaultTypeConverters.PrimitiveTypeConverters.TryGetValue(ActionParameter.ParameterType, out var primitiveTypeConverter))
+        if (DefaultTypeConverters.TryConvert(input, ActionParameter.ParameterType, out result))
         {
-            try
-            {
-                result = primitiveTypeConverter.Invoke(input);
-                return true;
-            }
-            catch
-            {
-                result = default;
-                return false;
-            }
+            return true;
         }
 
         result = default;

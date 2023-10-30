@@ -1,12 +1,8 @@
 using System;
 
-namespace Sholo.Mqtt
+namespace Sholo.Mqtt;
+
+[AttributeUsage(AttributeTargets.Assembly, AllowMultiple = true)]
+public sealed class MqttApplicationPartAttribute : Attribute
 {
-    [AttributeUsage(AttributeTargets.Assembly, AllowMultiple = true)]
-    public sealed class MqttApplicationPartAttribute : Attribute
-    {
-        public MqttApplicationPartAttribute()
-        {
-        }
-    }
 }

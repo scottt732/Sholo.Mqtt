@@ -1,9 +1,8 @@
-namespace Sholo.Mqtt.Topics.PatternPropertyConfiguration
+namespace Sholo.Mqtt.Topics.PatternPropertyConfiguration;
+
+public interface IMqttTopicPatternPropertyConfiguration
 {
-    public interface IMqttTopicPatternPropertyConfiguration
-    {
-        string ParameterName { get; }
-        bool HaveTypeConverter { get; }
-        object GetParameterValue(string value);
-    }
+    string ParameterName { get; }
+    bool HaveTypeConverter { get; }
+    object GetParameterValue(string value);
 }

@@ -1,6 +1,8 @@
+using System;
+
 namespace Sholo.Mqtt.ValueProviders;
 
-public class MqttPayloadValueProvider : IMqttValueProvider<byte[]>
+public class MqttPayloadValueProvider : IMqttValueProvider<ArraySegment<byte>>
 {
-    public byte[] GetValueSource(ParameterBindingContext context) => context.Request.Payload;
+    public ArraySegment<byte> GetValueSource(ParameterBindingContext context) => context.Request.Payload;
 }

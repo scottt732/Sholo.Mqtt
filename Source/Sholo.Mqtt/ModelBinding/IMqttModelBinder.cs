@@ -7,6 +7,7 @@ public interface IMqttModelBinder
     bool CanBind(Type targetType);
 }
 
+// ReSharper disable once UnusedTypeParameter - Used to disambiguate in DI
 public interface IMqttModelBinder<TSource> : IMqttModelBinder
 {
 }

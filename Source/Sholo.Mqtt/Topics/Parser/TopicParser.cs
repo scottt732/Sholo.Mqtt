@@ -1,55 +1,53 @@
 using System;
 using System.Text;
 using System.Text.RegularExpressions;
-using JetBrains.Annotations;
 
-namespace Sholo.Mqtt.Topics.Parser
+namespace Sholo.Mqtt.Topics.Parser;
+
+[PublicAPI]
+public class TopicParser
 {
-    [PublicAPI]
-    public class TopicParser
+    public Regex ToMatchingRegex(string pattern)
     {
-        public Regex ToMatchingRegex(string pattern)
+        var topicParts = pattern.Split('/');
+        var regBuilder = new StringBuilder();
+
+        var haveMultiLevelWildcard = false;
+        for (var i = 0; i < topicParts.Length; i++)
         {
-            var topicParts = pattern.Split('/');
-            var regBuilder = new StringBuilder();
-
-            var haveMultiLevelWildcard = false;
-            for (var i = 0; i < topicParts.Length; i++)
+            var topicPart = topicParts[i];
+            if (topicPart.Equals("+", StringComparison.Ordinal))
             {
-                var topicPart = topicParts[i];
-                if (topicPart.Equals("+", StringComparison.Ordinal))
+                regBuilder.Append("(?<Wildcard>[^/]+)");
+            }
+            else if (topicPart.Equals("#", StringComparison.Ordinal))
+            {
+                if (i != topicParts.Length - 1)
                 {
-                    regBuilder.Append("(?<Wildcard>[^/]+)");
-                }
-                else if (topicPart.Equals("#", StringComparison.Ordinal))
-                {
-                    if (i != topicParts.Length - 1)
-                    {
-                        throw new ArgumentException("Multi-level wildcards can only appear at the end of a topic pattern");
-                    }
-
-                    if (haveMultiLevelWildcard)
-                    {
-                        throw new ArgumentException("Only one multi-level wildcard can appear within a topic pattern");
-                    }
-
-                    regBuilder.Append("(?<MultiLevelWildcard>([^/]+/)*([^/]+))");
-                    haveMultiLevelWildcard = true;
-                }
-                else
-                {
-                    regBuilder.Append(topicPart);
+                    throw new ArgumentException("Multi-level wildcards can only appear at the end of a topic pattern");
                 }
 
-                regBuilder.Append('/');
+                if (haveMultiLevelWildcard)
+                {
+                    throw new ArgumentException("Only one multi-level wildcard can appear within a topic pattern");
+                }
+
+                regBuilder.Append("(?<MultiLevelWildcard>([^/]+/)*([^/]+))");
+                haveMultiLevelWildcard = true;
+            }
+            else
+            {
+                regBuilder.Append(topicPart);
             }
 
-            if (regBuilder.Length > 0)
-            {
-                regBuilder.Length -= 1;
-            }
-
-            return new Regex(regBuilder.ToString());
+            regBuilder.Append('/');
         }
+
+        if (regBuilder.Length > 0)
+        {
+            regBuilder.Length -= 1;
+        }
+
+        return new Regex(regBuilder.ToString());
     }
 }

@@ -1,59 +1,51 @@
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
-using MQTTnet;
-using MQTTnet.Protocol;
+using MQTTnet.Packets;
 
-namespace Sholo.Mqtt.Topics.PatternFilter
+namespace Sholo.Mqtt.Topics.PatternFilter;
+
+public class MqttTopicPatternFilter : IMqttTopicPatternFilter
 {
-    public class MqttTopicPatternFilter : MqttTopicFilter, IMqttTopicPatternFilter
+    public string TopicPattern { get; set; }
+    public string[] TopicParameterNames { get; }
+
+    public MqttTopicFilter TopicFilter { get; }
+
+    private Regex TopicPatternMatcher { get; }
+
+    public MqttTopicPatternFilter(
+        MqttTopicFilter topicFilter,
+        string topicPattern,
+        Regex topicPatternMatcher,
+        string[] topicParameterNames
+    )
     {
-        public string TopicPattern { get; set; }
-        public string[] TopicParameterNames { get; }
+        TopicFilter = topicFilter;
+        TopicPattern = topicPattern;
+        TopicPatternMatcher = topicPatternMatcher;
+        TopicParameterNames = topicParameterNames;
+    }
 
-        private Regex TopicPatternMatcher { get; }
-
-        public MqttTopicPatternFilter(
-            string topic,
-            string topicPattern,
-            Regex topicPatternMatcher,
-            MqttQualityOfServiceLevel? qualityOfServiceLevel,
-            bool noLocal,
-            bool retainAsPublished,
-            MqttRetainHandling retainHandling,
-            string[] topicParameterNames
-        )
+    public bool IsMatch(string topic, out IDictionary<string, string> topicArguments)
+    {
+        var match = TopicPatternMatcher.Match(topic);
+        if (!match.Success)
         {
-            Topic = topic;
-            TopicPattern = topicPattern;
-            TopicPatternMatcher = topicPatternMatcher;
-            TopicParameterNames = topicParameterNames;
-            QualityOfServiceLevel = qualityOfServiceLevel ?? MqttQualityOfServiceLevel.AtMostOnce;
-            NoLocal = noLocal;
-            RetainAsPublished = retainAsPublished;
-            RetainHandling = retainHandling;
+            topicArguments = null;
+            return false;
         }
 
-        public bool IsMatch(string topic, out IDictionary<string, string> topicArguments)
+        topicArguments = new Dictionary<string, string>();
+
+        foreach (var topicParameterName in TopicParameterNames)
         {
-            var match = TopicPatternMatcher.Match(topic);
-            if (!match.Success)
+            var matchGroup = match.Groups[topicParameterName];
+            if (matchGroup.Success)
             {
-                topicArguments = null;
-                return false;
+                topicArguments[topicParameterName] = matchGroup.Value;
             }
-
-            topicArguments = new Dictionary<string, string>();
-
-            foreach (var topicParameterName in TopicParameterNames)
-            {
-                var matchGroup = match.Groups[topicParameterName];
-                if (matchGroup.Success)
-                {
-                    topicArguments[topicParameterName] = matchGroup.Value;
-                }
-            }
-
-            return true;
         }
+
+        return true;
     }
 }

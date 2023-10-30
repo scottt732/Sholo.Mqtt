@@ -4,71 +4,70 @@
 using System;
 using System.Threading.Tasks;
 
-namespace Sholo.Mqtt.Internal
+namespace Sholo.Mqtt.Internal;
+
+/// <summary>
+/// <see cref="IControllerActivator"/> that uses type activation to create controllers.
+/// </summary>
+internal class DefaultControllerActivator : IControllerActivator
 {
-    /// <summary>
-    /// <see cref="IControllerActivator"/> that uses type activation to create controllers.
-    /// </summary>
-    internal class DefaultControllerActivator : IControllerActivator
+    private readonly ITypeActivatorCache _typeActivatorCache;
+
+    public DefaultControllerActivator(ITypeActivatorCache typeActivatorCache)
     {
-        private readonly ITypeActivatorCache _typeActivatorCache;
+        _typeActivatorCache = typeActivatorCache ?? throw new ArgumentNullException(nameof(typeActivatorCache));
+    }
 
-        public DefaultControllerActivator(ITypeActivatorCache typeActivatorCache)
+    /// <inheritdoc />
+    public object Create(MqttRequestContext controllerContext, Type controllerType)
+    {
+        if (controllerContext == null)
         {
-            _typeActivatorCache = typeActivatorCache ?? throw new ArgumentNullException(nameof(typeActivatorCache));
+            throw new ArgumentNullException(nameof(controllerContext));
         }
 
-        /// <inheritdoc />
-        public object Create(MqttRequestContext controllerContext, Type controllerType)
+        var serviceProvider = controllerContext.ServiceProvider;
+
+        return _typeActivatorCache.CreateInstance<object>(serviceProvider, controllerType);
+    }
+
+    /// <inheritdoc />
+    public void Release(MqttRequestContext context, object controller)
+    {
+        if (context == null)
         {
-            if (controllerContext == null)
-            {
-                throw new ArgumentNullException(nameof(controllerContext));
-            }
-
-            var serviceProvider = controllerContext.ServiceProvider;
-
-            return _typeActivatorCache.CreateInstance<object>(serviceProvider, controllerType);
+            throw new ArgumentNullException(nameof(context));
         }
 
-        /// <inheritdoc />
-        public void Release(MqttRequestContext context, object controller)
+        if (controller == null)
         {
-            if (context == null)
-            {
-                throw new ArgumentNullException(nameof(context));
-            }
-
-            if (controller == null)
-            {
-                throw new ArgumentNullException(nameof(controller));
-            }
-
-            if (controller is IDisposable disposable)
-            {
-                disposable.Dispose();
-            }
+            throw new ArgumentNullException(nameof(controller));
         }
 
-        public ValueTask ReleaseAsync(MqttRequestContext context, object controller)
+        if (controller is IDisposable disposable)
         {
-            if (context == null)
-            {
-                throw new ArgumentNullException(nameof(context));
-            }
-
-            if (controller == null)
-            {
-                throw new ArgumentNullException(nameof(controller));
-            }
-
-            if (controller is IAsyncDisposable asyncDisposable)
-            {
-                return asyncDisposable.DisposeAsync();
-            }
-
-            Release(context, controller);
-            return default;
+            disposable.Dispose();
         }
+    }
+
+    public ValueTask ReleaseAsync(MqttRequestContext context, object controller)
+    {
+        if (context == null)
+        {
+            throw new ArgumentNullException(nameof(context));
+        }
+
+        if (controller == null)
+        {
+            throw new ArgumentNullException(nameof(controller));
+        }
+
+        if (controller is IAsyncDisposable asyncDisposable)
+        {
+            return asyncDisposable.DisposeAsync();
+        }
+
+        Release(context, controller);
+        return default;
     }
 }

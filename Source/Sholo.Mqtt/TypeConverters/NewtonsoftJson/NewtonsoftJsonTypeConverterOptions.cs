@@ -1,7 +1,7 @@
 using System.Text;
 using Newtonsoft.Json;
 
-namespace Sholo.Mqtt.TypeConverters.Payload.NewtonsoftJson;
+namespace Sholo.Mqtt.TypeConverters.NewtonsoftJson;
 
 public class NewtonsoftJsonTypeConverterOptions
 {
