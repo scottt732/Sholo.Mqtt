@@ -24,7 +24,7 @@ public class MqttRequestContext
     public ArraySegment<byte> Payload { get; }
     public MqttQualityOfServiceLevel QualityOfServiceLevel { get; }
     public bool Retain { get; }
-    public MqttUserProperty[] UserProperties { get; }
+    public MqttUserProperty[] MqttUserProperties { get; }
     public string ContentType { get; }
     public string ResponseTopic { get; }
     public MqttPayloadFormatIndicator? PayloadFormatIndicator { get; }
@@ -49,7 +49,7 @@ public class MqttRequestContext
         Payload = context.Payload;
         QualityOfServiceLevel = context.QualityOfServiceLevel;
         Retain = context.Retain;
-        UserProperties = context.UserProperties;
+        MqttUserProperties = context.MqttUserProperties;
         ContentType = context.ContentType;
         ResponseTopic = context.ResponseTopic;
         PayloadFormatIndicator = context.PayloadFormatIndicator;
@@ -83,7 +83,7 @@ public class MqttRequestContext
         Payload = payload;
         QualityOfServiceLevel = qualityOfServiceLevel;
         Retain = retain;
-        UserProperties = userProperties ?? Array.Empty<MqttUserProperty>();
+        MqttUserProperties = userProperties ?? Array.Empty<MqttUserProperty>();
         ContentType = contentType;
         ResponseTopic = responseTopic;
         PayloadFormatIndicator = payloadFormatIndicator;
@@ -102,7 +102,7 @@ public class MqttRequestContext
         Payload = message.PayloadSegment;
         QualityOfServiceLevel = message.QualityOfServiceLevel;
         Retain = message.Retain;
-        UserProperties = message.UserProperties?.ToArray() ?? Array.Empty<MqttUserProperty>();
+        MqttUserProperties = message.UserProperties?.ToArray() ?? Array.Empty<MqttUserProperty>();
         ContentType = message.ContentType;
         ResponseTopic = message.ResponseTopic;
         PayloadFormatIndicator = message.PayloadFormatIndicator;

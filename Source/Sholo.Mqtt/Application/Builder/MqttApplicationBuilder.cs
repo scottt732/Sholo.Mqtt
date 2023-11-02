@@ -12,7 +12,7 @@ public class MqttApplicationBuilder : IMqttApplicationBuilder
     public IServiceProvider ApplicationServices { get; set; }
     public IDictionary<string, object> Properties { get; }
 
-    private List<Func<MqttRequestDelegate, MqttRequestDelegate>> Components { get; }
+    private List<Func<MqttRequestDelegate, MqttRequestDelegate>> Middleware { get; }
 
     public MqttApplicationBuilder(IServiceProvider serviceProvider)
         : this()
@@ -29,12 +29,12 @@ public class MqttApplicationBuilder : IMqttApplicationBuilder
 
     private MqttApplicationBuilder()
     {
-        Components = new List<Func<MqttRequestDelegate, MqttRequestDelegate>>();
+        Middleware = new List<Func<MqttRequestDelegate, MqttRequestDelegate>>();
     }
 
     public IMqttApplicationBuilder Use(Func<MqttRequestDelegate, MqttRequestDelegate> middleware)
     {
-        Components.Add(middleware);
+        Middleware.Add(middleware);
         return this;
     }
 
@@ -47,9 +47,9 @@ public class MqttApplicationBuilder : IMqttApplicationBuilder
     {
         MqttRequestDelegate app = _ => Task.FromResult(false);
 
-        for (var c = Components.Count - 1; c >= 0; c--)
+        for (var c = Middleware.Count - 1; c >= 0; c--)
         {
-            app = Components[c](app);
+            app = Middleware[c](app);
         }
 
         var routeProvider = ApplicationServices.GetRequiredService<IRouteProvider>();

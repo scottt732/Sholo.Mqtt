@@ -16,7 +16,7 @@ public class MqttUserPropertyValueProvider : IMqttValueProvider<string>
 
     public string GetValueSource(ParameterBindingContext context)
     {
-        return context.Request.UserProperties
+        return context.Request.MqttUserProperties
             .Where(x => x.Name.Equals(PropertyName, StringComparison))
             .Select(x => x.Value)
             .FirstOrDefault();
