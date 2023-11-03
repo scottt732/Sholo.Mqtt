@@ -39,11 +39,14 @@
         "files.insertFinalNewline": true
       },
       "extensions": [
+        "ms-dotnettools.csdevkit",
         "codezombiech.gitignore",
         "michelemelluso.gitignore",
         "eamodio.gitlens",
         "GitHub.copilot",
-        "ms-dotnettools.csdevkit",
+        "github.vscode-github-actions",
+        "redhat.vscode-yaml",
+        "EditorConfig.EditorConfig",
         "formulahendry.dotnet-test-explorer"
       ]
     }

@@ -51,6 +51,7 @@ Task("Test")
                 {
                     $"trx;LogFileName={project.GetFilenameWithoutExtension()}.trx",
                     $"html;LogFileName={project.GetFilenameWithoutExtension()}.html",
+                    $"junit;LogFileName={project.GetFilenameWithoutExtension()}.xml",
                 },
                 NoBuild = true,
                 NoRestore = true,

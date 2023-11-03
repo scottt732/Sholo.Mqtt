@@ -3,19 +3,19 @@ name: Build
 on:
   push:
     branches:
-      - '*'
-    tags:
-      - '*'
+      - main
+  pull_request:
+  release:
+    types:
+      - published
+  workflow_dispatch:
 
 env:
-  # Disable the .NET logo in the console output.
   DOTNET_NOLOGO: true
-  # Disable the .NET first time experience to skip caching NuGet packages and speed up the build.
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
-  # Disable sending .NET CLI telemetry to Microsoft.
   DOTNET_CLI_TELEMETRY_OPTOUT: true
-  # Set the build number in MinVer.
   MINVERBUILDMETADATA: build.${{github.run_number}}
+  NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
 
 jobs:
   build:
@@ -23,34 +23,73 @@ jobs:
     runs-on: ${{matrix.os}}
     strategy:
       matrix:
-        os: [ubuntu-latest] # , windows-latest, macOS-latest
+        os: [ubuntu-latest]
     steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-      with:
-        lfs: true
-        fetch-depth: 0
-    - name: 'Git Fetch Tags'
-      run: git fetch --tags
-      shell: pwsh
-    - name: 'Install .NET SDK'
-      uses: actions/setup-dotnet@v1
-      with:
-        dotnet-version: 5.0.101
-    - name: 'Dotnet Tool Restore'
-      run: dotnet tool restore
-      shell: pwsh
-    - name: 'Dotnet Cake Build'
-      run: dotnet cake --target=Build
-      shell: pwsh
-    - name: 'Dotnet Cake Test'
-      run: dotnet cake --target=Test
-      shell: pwsh
-    - name: 'Dotnet Cake Pack'
-      run: dotnet cake --target=Pack
-      shell: pwsh
-    - name: 'Publish Artifacts'
-      uses: actions/upload-artifact@v2
-      with:
-        name: ${{matrix.os}}
-        path: './Artifacts/*'
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          filter: tree:0
+          lfs: true
+      - name: 'Git Fetch Tags'
+        run: git fetch --tags
+      - name: Enable nuget package locking
+        run: touch packages.lock.json
+      - name: 'Install .NET SDK'
+        uses: actions/setup-dotnet@v3
+        with:
+          global-json-file: global.json
+          cache: true
+      - name: 'Dotnet Tool Restore'
+        run: dotnet tool restore
+      - name: "Dotnet Cake Build"
+        run: dotnet cake --target=Build
+      - name: "Dotnet Cake Test"
+        run: dotnet cake --target=Test
+      - name: "Dotnet Cake Pack"
+        run: dotnet cake --target=Pack
+      - name: 'Publish Artifacts'
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{matrix.os}}
+          path: './Artifacts/*'
+
+  publish-test-results:
+    name: "Publish Tests Results"
+    needs: build
+    if: always()
+    permissions:
+      checks: write
+      pull-requests: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Download Artifact"
+        uses: actions/download-artifact@v3.0.2
+        with:
+          path: "./Artifacts"
+      - name: "Publish Test Summary"
+        uses: test-summary/action@v2
+        if: always()
+        with:
+          paths: "./Artifacts/*/*.xml"
+
+  push-github-packages:
+    name: "Push GitHub Packages"
+    needs: build
+    if: github.ref == 'refs/heads/main' || github.event_name == 'release'
+    env:
+      name: "GitHub Packages"
+      url: "https://github.com/${{github.repository}}/packages"
+    permissions:
+      packages: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Download Artifact"
+        uses: actions/download-artifact@v3.0.2
+        with:
+          name: "ubuntu-latest"
+      - name: "Dotnet NuGet Add Source"
+        run: dotnet nuget add source https://nuget.pkg.github.com/GITHUB-USERNAME/index.json --name GitHub --username GITHUB-USERNAME --password ${{secrets.GITHUB_TOKEN}}
+        shell: pwsh
+      - name: "Dotnet NuGet Push"
+        run: dotnet nuget push .\*.nupkg --api-key '${{ github.token }}' --source GitHub --skip-duplicate
+        shell: pwsh
