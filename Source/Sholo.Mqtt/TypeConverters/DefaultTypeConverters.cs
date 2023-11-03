@@ -7,8 +7,8 @@ namespace Sholo.Mqtt.TypeConverters;
 
 public static class DefaultTypeConverters
 {
-    private static IDictionary<Type, Func<string, object>> PrimitiveTypeConverters { get; } =
-        new Dictionary<Type, Func<string, object>>
+    private static Dictionary<Type, Func<string, object>> PrimitiveTypeConverters { get; } =
+        new()
         {
             [typeof(string)] = str => str,
             [typeof(bool)] = str => bool.Parse(str),

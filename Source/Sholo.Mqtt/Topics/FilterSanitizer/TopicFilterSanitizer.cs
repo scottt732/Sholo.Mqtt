@@ -1,4 +1,3 @@
-using System;
 using System.Text;
 
 namespace Sholo.Mqtt.Topics.FilterSanitizer;
@@ -12,11 +11,11 @@ internal static class TopicFilterSanitizer
 
         foreach (var part in parts)
         {
-            if (part.StartsWith("+", StringComparison.Ordinal))
+            if (part.StartsWith('+'))
             {
                 sb.Append('+');
             }
-            else if (part.StartsWith("#", StringComparison.Ordinal))
+            else if (part.StartsWith('#'))
             {
                 sb.Append('#');
             }

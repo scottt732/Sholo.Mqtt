@@ -21,10 +21,7 @@ internal class DefaultControllerActivator : IControllerActivator
     /// <inheritdoc />
     public object Create(MqttRequestContext controllerContext, Type controllerType)
     {
-        if (controllerContext == null)
-        {
-            throw new ArgumentNullException(nameof(controllerContext));
-        }
+        ArgumentNullException.ThrowIfNull(controllerContext, nameof(controllerContext));
 
         var serviceProvider = controllerContext.ServiceProvider;
 
@@ -34,15 +31,8 @@ internal class DefaultControllerActivator : IControllerActivator
     /// <inheritdoc />
     public void Release(MqttRequestContext context, object controller)
     {
-        if (context == null)
-        {
-            throw new ArgumentNullException(nameof(context));
-        }
-
-        if (controller == null)
-        {
-            throw new ArgumentNullException(nameof(controller));
-        }
+        ArgumentNullException.ThrowIfNull(context, nameof(context));
+        ArgumentNullException.ThrowIfNull(controller, nameof(controller));
 
         if (controller is IDisposable disposable)
         {
@@ -52,15 +42,8 @@ internal class DefaultControllerActivator : IControllerActivator
 
     public ValueTask ReleaseAsync(MqttRequestContext context, object controller)
     {
-        if (context == null)
-        {
-            throw new ArgumentNullException(nameof(context));
-        }
-
-        if (controller == null)
-        {
-            throw new ArgumentNullException(nameof(controller));
-        }
+        ArgumentNullException.ThrowIfNull(context, nameof(context));
+        ArgumentNullException.ThrowIfNull(controller, nameof(controller));
 
         if (controller is IAsyncDisposable asyncDisposable)
         {

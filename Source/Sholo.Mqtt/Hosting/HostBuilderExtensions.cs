@@ -10,10 +10,7 @@ public static class HostBuilderExtensions
 {
     public static IHostBuilder ConfigureMqttHost(this IHostBuilder builder, Action<IMqttApplicationBuilder> configure)
     {
-        if (configure is null)
-        {
-            throw new ArgumentNullException(nameof(configure));
-        }
+        ArgumentNullException.ThrowIfNull(configure, nameof(configure));
 
         builder.ConfigureServices((_, services) =>
         {

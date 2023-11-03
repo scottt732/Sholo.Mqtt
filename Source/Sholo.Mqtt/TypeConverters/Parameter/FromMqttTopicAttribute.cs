@@ -9,10 +9,7 @@ public sealed class FromMqttTopicAttribute : Attribute
 
     public FromMqttTopicAttribute(Type typeConverterType)
     {
-        if (typeConverterType == null)
-        {
-            throw new ArgumentNullException(nameof(typeConverterType));
-        }
+        ArgumentNullException.ThrowIfNull(typeConverterType, nameof(typeConverterType));
 
         if (!typeof(IMqttParameterTypeConverter).IsAssignableFrom(typeConverterType))
         {

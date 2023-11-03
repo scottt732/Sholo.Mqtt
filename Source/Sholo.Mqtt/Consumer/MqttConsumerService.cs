@@ -225,10 +225,6 @@ public sealed class MqttConsumerService<TManagedMqttSettings> : BackgroundServic
             {
                 Logger.LogWarning("No handler found for message on {Topic}", context.Topic);
             }
-            catch (Exception exc)
-            {
-                Logger.LogError(exc, "Request failed to process: {Message}", exc.Message);
-            }
 
             eventArgs.ProcessingFailed = !success;
         }

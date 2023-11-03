@@ -60,14 +60,14 @@ internal class MqttTopicPatternFilterBuilder : IMqttTopicPatternFilterBuilder
         for (var i = 0; i < topicParts.Length; i++)
         {
             var topicPart = topicParts[i];
-            if (topicPart.StartsWith("+", StringComparison.Ordinal))
+            if (topicPart.StartsWith('+'))
             {
                 var variableName = topicPart[1..];
                 topicParameterNames.Add(variableName);
 
                 regBuilder.Append("(?<" + variableName + ">[^/]+)");
             }
-            else if (topicPart.StartsWith("#", StringComparison.Ordinal))
+            else if (topicPart.StartsWith('#'))
             {
                 if (i != topicParts.Length - 1)
                 {

@@ -124,10 +124,7 @@ public class MqttRequestContext
         MqttApplicationMessage message,
         CancellationToken cancellationToken = default)
     {
-        if (message == null)
-        {
-            throw new ArgumentNullException(nameof(message));
-        }
+        ArgumentNullException.ThrowIfNull(message, nameof(message));
 
         return Client.EnqueueAsync(message);
     }

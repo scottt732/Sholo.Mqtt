@@ -13,15 +13,8 @@ public static class MqttRequestContextExtensions
         Action<MqttApplicationMessageBuilder> messageBuilder,
         CancellationToken cancellationToken = default)
     {
-        if (requestContext == null)
-        {
-            throw new ArgumentNullException(nameof(requestContext));
-        }
-
-        if (messageBuilder == null)
-        {
-            throw new ArgumentNullException(nameof(messageBuilder));
-        }
+        ArgumentNullException.ThrowIfNull(requestContext, nameof(requestContext));
+        ArgumentNullException.ThrowIfNull(messageBuilder, nameof(messageBuilder));
 
         var builder = new MqttApplicationMessageBuilder();
         messageBuilder.Invoke(builder);
@@ -35,15 +28,8 @@ public static class MqttRequestContextExtensions
         MqttApplicationMessage message,
         CancellationToken cancellationToken = default)
     {
-        if (requestContext == null)
-        {
-            throw new ArgumentNullException(nameof(requestContext));
-        }
-
-        if (message == null)
-        {
-            throw new ArgumentNullException(nameof(message));
-        }
+        ArgumentNullException.ThrowIfNull(requestContext, nameof(requestContext));
+        ArgumentNullException.ThrowIfNull(message, nameof(message));
 
         message.Topic = requestContext.ResponseTopic;
         message.CorrelationData = requestContext.CorrelationData;
@@ -56,15 +42,8 @@ public static class MqttRequestContextExtensions
         Action<MqttApplicationMessageBuilder> messageBuilder,
         CancellationToken cancellationToken = default)
     {
-        if (requestContext == null)
-        {
-            throw new ArgumentNullException(nameof(requestContext));
-        }
-
-        if (messageBuilder == null)
-        {
-            throw new ArgumentNullException(nameof(messageBuilder));
-        }
+        ArgumentNullException.ThrowIfNull(requestContext, nameof(requestContext));
+        ArgumentNullException.ThrowIfNull(messageBuilder, nameof(messageBuilder));
 
         var builder = new MqttApplicationMessageBuilder();
         messageBuilder.Invoke(builder);

@@ -2,6 +2,7 @@ using System;
 
 namespace Sholo.Mqtt.TypeConverters.Payload;
 
+[PublicAPI]
 [AttributeUsage(AttributeTargets.Parameter)]
 public sealed class FromMqttPayloadAttribute : Attribute
 {
@@ -9,10 +10,7 @@ public sealed class FromMqttPayloadAttribute : Attribute
 
     public FromMqttPayloadAttribute(Type typeConverterType)
     {
-        if (typeConverterType == null)
-        {
-            throw new ArgumentNullException(nameof(typeConverterType));
-        }
+        ArgumentNullException.ThrowIfNull(typeConverterType, nameof(typeConverterType));
 
         if (!typeof(IMqttRequestPayloadTypeConverter).IsAssignableFrom(typeConverterType))
         {

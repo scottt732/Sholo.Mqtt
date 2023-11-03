@@ -370,7 +370,7 @@ public class RouteProvider : IRouteProvider
                 .GetServices(parameterType)
                 .ToArray();
 
-        if (!argumentValues.Any()) return false;
+        if (argumentValues.Length == 0) return false;
 
         var argumentValue = argumentValues.Last();
 

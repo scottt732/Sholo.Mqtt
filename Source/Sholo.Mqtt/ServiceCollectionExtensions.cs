@@ -10,10 +10,7 @@ using MQTTnet.Extensions.ManagedClient;
 using MQTTnet.Formatter;
 using MQTTnet.Server;
 using Sholo.Mqtt.Application.Provider;
-using Sholo.Mqtt.Application.Provider;
 using Sholo.Mqtt.Consumer;
-using Sholo.Mqtt.DependencyInjection;
-using Sholo.Mqtt.Internal;
 using Sholo.Mqtt.DependencyInjection;
 using Sholo.Mqtt.Internal;
 using Sholo.Mqtt.Settings;
@@ -36,13 +33,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton(sp =>
         {
             var mqttSettings = sp.GetRequiredService<IOptions<TMqttSettings>>().Value;
-        services.AddSingleton(sp =>
-        {
-            var mqttSettings = sp.GetRequiredService<IOptions<TMqttSettings>>().Value;
 
-            var mqttClientOptionsBuilder = new MqttClientOptionsBuilder()
-                .WithTcpServer(mqttSettings.Host, mqttSettings.Port)
-                .WithProtocolVersion(mqttSettings.MqttProtocolVersion ?? MqttProtocolVersion.V500);
             var mqttClientOptionsBuilder = new MqttClientOptionsBuilder()
                 .WithTcpServer(mqttSettings.Host, mqttSettings.Port)
                 .WithProtocolVersion(mqttSettings.MqttProtocolVersion ?? MqttProtocolVersion.V500);
@@ -80,12 +71,8 @@ public static class ServiceCollectionExtensions
                 mqttClientOptionsBuilder = mqttClientOptionsBuilder.WithTimeout(mqttSettings.Timeout.Value);
             }
 
-            mqttClientOptionsBuilder = mqttSettings.KeepAliveInterval.HasValue ?
-                mqttClientOptionsBuilder.WithKeepAlivePeriod(mqttSettings.KeepAliveInterval.Value) :
-                mqttClientOptionsBuilder.WithNoKeepAlive();
-            mqttClientOptionsBuilder = mqttSettings.KeepAliveInterval.HasValue ?
-                mqttClientOptionsBuilder.WithKeepAlivePeriod(mqttSettings.KeepAliveInterval.Value) :
-                mqttClientOptionsBuilder.WithNoKeepAlive();
+            mqttClientOptionsBuilder = mqttSettings.KeepAliveInterval.HasValue ? mqttClientOptionsBuilder.WithKeepAlivePeriod(mqttSettings.KeepAliveInterval.Value) : mqttClientOptionsBuilder.WithNoKeepAlive();
+            mqttClientOptionsBuilder = mqttSettings.KeepAliveInterval.HasValue ? mqttClientOptionsBuilder.WithKeepAlivePeriod(mqttSettings.KeepAliveInterval.Value) : mqttClientOptionsBuilder.WithNoKeepAlive();
 
             var lastWillAndTestamentMessage = mqttSettings.GetLastWillAndTestamentApplicationMessage();
             if (lastWillAndTestamentMessage != null)
@@ -124,13 +111,7 @@ public static class ServiceCollectionExtensions
 
         return new MqttServiceCollection(services);
     }
-        return new MqttServiceCollection(services);
-    }
 
-    public static IMqttServiceCollection AddManagedMqttServices<TMqttSettings>(this IServiceCollection services, string configurationName)
-        where TMqttSettings : ManagedMqttSettings, new()
-    {
-        services.AddMqttServices<TMqttSettings>(configurationName);
     public static IMqttServiceCollection AddManagedMqttServices<TMqttSettings>(this IServiceCollection services, string configurationName)
         where TMqttSettings : ManagedMqttSettings, new()
     {
@@ -147,26 +128,19 @@ public static class ServiceCollectionExtensions
                 .WithPendingMessagesOverflowStrategy(mqttManagedSettings.PendingMessagesOverflowStrategy ?? MqttPendingMessagesOverflowStrategy.DropNewMessage)
                 .WithAutoReconnectDelay(mqttManagedSettings.AutoReconnectDelay ?? TimeSpan.FromSeconds(5.0))
                 .WithMaxPendingMessages(mqttManagedSettings.MaxPendingMessages ?? int.MaxValue);
-            var managedMqttClientOptionsBuilder = new ManagedMqttClientOptionsBuilder()
-                .WithClientOptions(mqttClientOptions)
-                .WithPendingMessagesOverflowStrategy(mqttManagedSettings.PendingMessagesOverflowStrategy ?? MqttPendingMessagesOverflowStrategy.DropNewMessage)
-                .WithAutoReconnectDelay(mqttManagedSettings.AutoReconnectDelay ?? TimeSpan.FromSeconds(5.0))
-                .WithMaxPendingMessages(mqttManagedSettings.MaxPendingMessages ?? int.MaxValue);
 
             if (managedMqttClientStorage != null)
             {
                 managedMqttClientOptionsBuilder = managedMqttClientOptionsBuilder.WithStorage(managedMqttClientStorage);
             }
+
             if (managedMqttClientStorage != null)
             {
                 managedMqttClientOptionsBuilder = managedMqttClientOptionsBuilder.WithStorage(managedMqttClientStorage);
             }
 
             var managedMqttClientOptions = managedMqttClientOptionsBuilder.Build();
-            var managedMqttClientOptions = managedMqttClientOptionsBuilder.Build();
 
-            return managedMqttClientOptions;
-        });
             return managedMqttClientOptions;
         });
 
@@ -179,8 +153,6 @@ public static class ServiceCollectionExtensions
 
         return new MqttServiceCollection(services);
     }
-        return new MqttServiceCollection(services);
-    }
 
     public static IMqttServiceCollection AddManagedMqttServices<TMqttSettings, TStorage>(this IServiceCollection services, string configurationName)
         where TMqttSettings : ManagedMqttSettings, new()
@@ -188,15 +160,7 @@ public static class ServiceCollectionExtensions
     {
         services.AddSingleton<IManagedMqttClientStorage, TStorage>();
         services.AddManagedMqttServices<TMqttSettings>(configurationName);
-    public static IMqttServiceCollection AddManagedMqttServices<TMqttSettings, TStorage>(this IServiceCollection services, string configurationName)
-        where TMqttSettings : ManagedMqttSettings, new()
-        where TStorage : class, IManagedMqttClientStorage
-    {
-        services.AddSingleton<IManagedMqttClientStorage, TStorage>();
-        services.AddManagedMqttServices<TMqttSettings>(configurationName);
 
-        return new MqttServiceCollection(services);
-    }
         return new MqttServiceCollection(services);
     }
 
@@ -227,49 +191,11 @@ public static class ServiceCollectionExtensions
         this IMqttServiceCollection services,
         Action<NewtonsoftJsonTypeConverterOptions> configuration = null)
     {
-        services.Configure<NewtonsoftJsonTypeConverterOptions>(opt =>
-        {
-            configuration?.Invoke(opt);
-        });
-
-        services.TryAddSingleton<NewtonsoftJsonTypeConverter>();
-        services.TryAddSingleton<IMqttRequestPayloadTypeConverter>(sp => sp.GetRequiredService<NewtonsoftJsonTypeConverter>());
-    public static IMqttServiceCollection AddMqttConsumerService<TMqttSettings>(
-        this IServiceCollection services,
-        string configurationName
-    )
-        where TMqttSettings : ManagedMqttSettings, new()
-    {
-        services.TryAddSingleton<ITypeActivatorCache, TypeActivatorCache>();
-        services.TryAddSingleton<IControllerActivator, DefaultControllerActivator>();
-        services.TryAddSingleton<IRouteProvider, RouteProvider>();
-
-        services.TryAddSingleton<IMqttApplicationProvider, MqttApplicationProvider>();
-        services.AddManagedMqttServices<TMqttSettings>(configurationName);
-        services.AddHostedService<MqttConsumerService<TMqttSettings>>();
-
-        return new MqttServiceCollection(services);
-    }
-
-    public static IMqttServiceCollection AddMqttConsumerService(
-        this IServiceCollection services,
-        string configurationName
-    )
-        => services.AddMqttConsumerService<ManagedMqttSettings>(configurationName);
-
-    public static IMqttServiceCollection AddNewtonsoftJsonPayloadConverter(
-        this IMqttServiceCollection services,
-        Action<NewtonsoftJsonTypeConverterOptions> configuration = null)
-    {
-        services.Configure<NewtonsoftJsonTypeConverterOptions>(opt =>
-        {
-            configuration?.Invoke(opt);
-        });
+        services.Configure<NewtonsoftJsonTypeConverterOptions>(opt => { configuration?.Invoke(opt); });
 
         services.TryAddSingleton<NewtonsoftJsonTypeConverter>();
         services.TryAddSingleton<IMqttRequestPayloadTypeConverter>(sp => sp.GetRequiredService<NewtonsoftJsonTypeConverter>());
 
-        return services;
         return services;
     }
 }
