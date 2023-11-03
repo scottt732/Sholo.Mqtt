@@ -1,0 +1,21 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Sample (console)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",            
+            "program": "${workspaceFolder}/Samples/Mqtt.Sample/bin/Debug/net7.0/Mqtt.Sample.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}/Samples/Mqtt.Sample",
+            "console": "integratedTerminal",
+            "stopAtEntry": false
+        },
+        {
+            "name": ".NET Attach",
+            "type": "coreclr",
+            "request": "attach"
+        }
+    ]
+}

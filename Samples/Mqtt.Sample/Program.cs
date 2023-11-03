@@ -30,7 +30,6 @@ public static class Program
             .ConfigureMqttHost(app => { app.UseRouting(); })
             .UseConsoleLifetime(opt => { opt.SuppressStatusMessages = true; })
             .Build()
-            .RunAsync()
-            ;
+            .RunAsync();
     }
 }

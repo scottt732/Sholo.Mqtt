@@ -1,0 +1,24 @@
+version: '3.8'
+services:
+  devcontainer:
+    image: mcr.microsoft.com/devcontainers/dotnet:7.0-bookworm
+    volumes:
+      - ../:/workspaces/Sholo.Mqtt:cached
+    network_mode: service:mosquitto
+    command: sleep infinity
+
+  mosquitto:
+    image: eclipse-mosquitto:latest
+    container_name: mosquitto
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - ./config:/mosquitto/config:rw
+      - mosquitto-data:/mosquitto/data:rw
+      - mosquitto-log:/mosquitto/log:rw
+    restart: unless-stopped
+
+volumes:
+  mosquitto-data:
+  mosquitto-log:

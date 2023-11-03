@@ -1,0 +1,53 @@
+{
+	"name": "Sholo.Mqtt",
+  "dockerComposeFile": "compose.yaml",
+  "service": "devcontainer",
+  "workspaceFolder": "/workspaces/Sholo.Mqtt",
+	"features": {
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "installZsh": true,
+      "configureZshAsDefaultShell": true,
+      "installOhMyZsh": true,
+      "installOhMyZshConfig": true,
+      "upgradePackages": true
+    },
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+    "ghcr.io/devcontainers/features/node:1": {},
+    "ghcr.io/devcontainers-contrib/features/act:1": {},
+    "ghcr.io/devcontainers/features/git:1": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    "ghcr.io/devcontainers-contrib/features/apt-get-packages:1": {
+      "packages": "curl,nano,bat,direnv,htop"
+    }
+  },
+  "containerEnv": {
+    "DOTNET_ENVIRONMENT": "Development"
+  },
+  "remoteEnv": {
+  },
+  "customizations": {
+    "codespaces": {
+      "repositories": {
+          "scottt732/Sholo.Mqtt": {
+            "permissions": "write-all"
+          }
+      }
+    },
+    "vscode": {
+			"settings": {
+        "files.trimTrailingWhitespace": true,
+        "files.insertFinalNewline": true
+      },
+      "extensions": [
+        "codezombiech.gitignore",
+        "michelemelluso.gitignore",
+        "eamodio.gitlens",
+        "GitHub.copilot",
+        "ms-dotnettools.csdevkit",
+        "formulahendry.dotnet-test-explorer"
+      ]
+    }
+  },
+  "postCreateCommand": "dotnet restore",
+  "postStartCommand": "git config --global --add safe.directory ${containerWorkspaceFolder}"
+}
