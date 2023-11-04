@@ -1,0 +1,16 @@
+{
+  "recommendations": [
+    "EditorConfig.EditorConfig",
+    "GitHub.copilot",
+    "codezombiech.gitignore",
+    "eamodio.gitlens",
+    "formulahendry.dotnet-test-explorer",
+    "github.vscode-github-actions",
+    "mhutchie.git-graph",
+    "michelemelluso.gitignore",
+    "ms-azuretools.vscode-docker",
+    "ms-dotnettools.csdevkit",
+    "redhat.vscode-yaml",
+    "timonwong.shellcheck"
+  ]
+}

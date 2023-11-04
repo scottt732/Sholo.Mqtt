@@ -3,9 +3,45 @@
   "isRoot": true,
   "tools": {
     "cake.tool": {
-      "version": "1.0.0-rc0001",
+      "version": "3.1.0",
       "commands": [
         "dotnet-cake"
+      ]
+    },
+    "docfx": {
+      "version": "2.73.0",
+      "commands": [
+        "docfx"
+      ]
+    },
+    "docfxtocgenerator": {
+      "version": "1.14.0",
+      "commands": [
+        "DocFxTocGenerator"
+      ]
+    },
+    "doclanguagetranslator": {
+      "version": "1.14.0",
+      "commands": [
+        "DocLanguageTranslator"
+      ]
+    },
+    "doclinkchecker": {
+      "version": "1.14.0",
+      "commands": [
+        "DocLinkChecker"
+      ]
+    },
+    "docfxopenapi": {
+      "version": "1.14.0",
+      "commands": [
+        "DocFxOpenApi"
+      ]
+    },
+    "minver-cli": {
+      "version": "4.3.0",
+      "commands": [
+        "minver"
       ]
     }
   }

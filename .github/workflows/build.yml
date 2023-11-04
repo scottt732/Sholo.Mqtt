@@ -19,39 +19,143 @@ env:
 
 jobs:
   build:
-    name: Build-${{matrix.os}}
-    runs-on: ${{matrix.os}}
-    strategy:
-      matrix:
-        os: [ubuntu-latest]
+    name: Build
+    runs-on: ubuntu-latest
     steps:
+
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           filter: tree:0
           lfs: true
+
       - name: 'Git Fetch Tags'
         run: git fetch --tags
+
       - name: Enable nuget package locking
         run: touch packages.lock.json
+
       - name: 'Install .NET SDK'
         uses: actions/setup-dotnet@v3
         with:
           global-json-file: global.json
           cache: true
+
       - name: 'Dotnet Tool Restore'
         run: dotnet tool restore
+
+      # - name: Use GitVersion
+      #   uses: gittools/actions/gitversion/setup@v0
+      #   with:
+      #     versionSpec: '5.x'
+      # - name: Use GitVersion
+      #   id: gitversion
+      #   uses: gittools/actions/gitversion/execute@v0
+      #   with:
+      #     useConfigFile: true
+      #     configFilePath: GitVersion.yml
+      # - name: Display GitVersion outputs (step output with prefix)
+      #   run: |
+      #     echo "Major: ${{ steps.gitversion.outputs.GitVersion_Major }}"
+      #     echo "Minor: ${{ steps.gitversion.outputs.GitVersion_Minor }}"
+      #     echo "Patch: ${{ steps.gitversion.outputs.GitVersion_Patch }}"
+      #     echo "PreReleaseTag: ${{ steps.gitversion.outputs.GitVersion_PreReleaseTag }}"
+      #     echo "PreReleaseTagWithDash: ${{ steps.gitversion.outputs.GitVersion_PreReleaseTagWithDash }}"
+      #     echo "PreReleaseLabel: ${{ steps.gitversion.outputs.GitVersion_PreReleaseLabel }}"
+      #     echo "PreReleaseNumber: ${{ steps.gitversion.outputs.GitVersion_PreReleaseNumber }}"
+      #     echo "WeightedPreReleaseNumber: ${{ steps.gitversion.outputs.GitVersion_WeightedPreReleaseNumber }}"
+      #     echo "BuildMetaData: ${{ steps.gitversion.outputs.GitVersion_BuildMetaData }}"
+      #     echo "BuildMetaDataPadded: ${{ steps.gitversion.outputs.GitVersion_BuildMetaDataPadded }}"
+      #     echo "FullBuildMetaData: ${{ steps.gitversion.outputs.GitVersion_FullBuildMetaData }}"
+      #     echo "MajorMinorPatch: ${{ steps.gitversion.outputs.GitVersion_MajorMinorPatch }}"
+      #     echo "SemVer: ${{ steps.gitversion.outputs.GitVersion_SemVer }}"
+      #     echo "LegacySemVer: ${{ steps.gitversion.outputs.GitVersion_LegacySemVer }}"
+      #     echo "LegacySemVerPadded: ${{ steps.gitversion.outputs.GitVersion_LegacySemVerPadded }}"
+      #     echo "AssemblySemVer: ${{ steps.gitversion.outputs.GitVersion_AssemblySemVer }}"
+      #     echo "AssemblySemFileVer: ${{ steps.gitversion.outputs.GitVersion_AssemblySemFileVer }}"
+      #     echo "FullSemVer: ${{ steps.gitversion.outputs.GitVersion_FullSemVer }}"
+      #     echo "InformationalVersion: ${{ steps.gitversion.outputs.GitVersion_InformationalVersion }}"
+      #     echo "BranchName: ${{ steps.gitversion.outputs.GitVersion_BranchName }}"
+      #     echo "EscapedBranchName: ${{ steps.gitversion.outputs.GitVersion_EscapedBranchName }}"
+      #     echo "Sha: ${{ steps.gitversion.outputs.GitVersion_Sha }}"
+      #     echo "ShortSha: ${{ steps.gitversion.outputs.GitVersion_ShortSha }}"
+      #     echo "NuGetVersionV2: ${{ steps.gitversion.outputs.GitVersion_NuGetVersionV2 }}"
+      #     echo "NuGetVersion: ${{ steps.gitversion.outputs.GitVersion_NuGetVersion }}"
+      #     echo "NuGetPreReleaseTagV2: ${{ steps.gitversion.outputs.GitVersion_NuGetPreReleaseTagV2 }}"
+      #     echo "NuGetPreReleaseTag: ${{ steps.gitversion.outputs.GitVersion_NuGetPreReleaseTag }}"
+      #     echo "VersionSourceSha: ${{ steps.gitversion.outputs.GitVersion_VersionSourceSha }}"
+      #     echo "CommitsSinceVersionSource: ${{ steps.gitversion.outputs.GitVersion_CommitsSinceVersionSource }}"
+      #     echo "CommitsSinceVersionSourcePadded: ${{ steps.gitversion.outputs.GitVersion_CommitsSinceVersionSourcePadded }}"
+      #     echo "UncommittedChanges: ${{ steps.gitversion.outputs.GitVersion_UncommittedChanges }}"
+      #     echo "CommitDate: ${{ steps.gitversion.outputs.GitVersion_CommitDate }}"
+
+      # - name: Display GitVersion variables (with prefix)
+      #   run: |
+      #     echo "Major: ${{ env.GitVersion_Major }}"
+      #     echo "Minor: ${{ env.GitVersion_Minor }}"
+      #     echo "Patch: ${{ env.GitVersion_Patch }}"
+      #     echo "PreReleaseTag: ${{ env.GitVersion_PreReleaseTag }}"
+      #     echo "PreReleaseTagWithDash: ${{ env.GitVersion_PreReleaseTagWithDash }}"
+      #     echo "PreReleaseLabel: ${{ env.GitVersion_PreReleaseLabel }}"
+      #     echo "PreReleaseNumber: ${{ env.GitVersion_PreReleaseNumber }}"
+      #     echo "WeightedPreReleaseNumber: ${{ env.GitVersion_WeightedPreReleaseNumber }}"
+      #     echo "BuildMetaData: ${{ env.GitVersion_BuildMetaData }}"
+      #     echo "BuildMetaDataPadded: ${{ env.GitVersion_BuildMetaDataPadded }}"
+      #     echo "FullBuildMetaData: ${{ env.GitVersion_FullBuildMetaData }}"
+      #     echo "MajorMinorPatch: ${{ env.GitVersion_MajorMinorPatch }}"
+      #     echo "SemVer: ${{ env.GitVersion_SemVer }}"
+      #     echo "LegacySemVer: ${{ env.GitVersion_LegacySemVer }}"
+      #     echo "LegacySemVerPadded: ${{ env.GitVersion_LegacySemVerPadded }}"
+      #     echo "AssemblySemVer: ${{ env.GitVersion_AssemblySemVer }}"
+      #     echo "AssemblySemFileVer: ${{ env.GitVersion_AssemblySemFileVer }}"
+      #     echo "FullSemVer: ${{ env.GitVersion_FullSemVer }}"
+      #     echo "InformationalVersion: ${{ env.GitVersion_InformationalVersion }}"
+      #     echo "BranchName: ${{ env.GitVersion_BranchName }}"
+      #     echo "EscapedBranchName: ${{ env.GitVersion_EscapedBranchName }}"
+      #     echo "Sha: ${{ env.GitVersion_Sha }}"
+      #     echo "ShortSha: ${{ env.GitVersion_ShortSha }}"
+      #     echo "NuGetVersionV2: ${{ env.GitVersion_NuGetVersionV2 }}"
+      #     echo "NuGetVersion: ${{ env.GitVersion_NuGetVersion }}"
+      #     echo "NuGetPreReleaseTagV2: ${{ env.GitVersion_NuGetPreReleaseTagV2 }}"
+      #     echo "NuGetPreReleaseTag: ${{ env.GitVersion_NuGetPreReleaseTag }}"
+      #     echo "VersionSourceSha: ${{ env.GitVersion_VersionSourceSha }}"
+      #     echo "CommitsSinceVersionSource: ${{ env.GitVersion_CommitsSinceVersionSource }}"
+      #     echo "CommitsSinceVersionSourcePadded: ${{ env.GitVersion_CommitsSinceVersionSourcePadded }}"
+      #     echo "UncommittedChanges: ${{ env.GitVersion_UncommittedChanges }}"
+      #     echo "CommitDate: ${{ env.GitVersion_CommitDate }}"
+
       - name: "Dotnet Cake Build"
         run: dotnet cake --target=Build
+
       - name: "Dotnet Cake Test"
         run: dotnet cake --target=Test
+
       - name: "Dotnet Cake Pack"
         run: dotnet cake --target=Pack
+
       - name: 'Publish Artifacts'
         uses: actions/upload-artifact@v3
         with:
-          name: ${{matrix.os}}
+          name: ubuntu-latest
           path: './Artifacts/*'
+
+      - name: Generate table of content
+        working-directory: QuickStart
+        run: DocFxTocGenerator -d ${{ github.workspace }}/Docs -sri
+        continue-on-error: false
+
+      - name: DocFX Build
+        working-directory: QuickStart
+        run: docfx ./docfx.json
+        continue-on-error: false
+
+      - name: Publish
+        if: github.event_name == 'push'
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: Docs/_site
+          force_orphan: true
 
   publish-test-results:
     name: "Publish Tests Results"
@@ -88,7 +192,7 @@ jobs:
         with:
           name: "ubuntu-latest"
       - name: "Dotnet NuGet Add Source"
-        run: dotnet nuget add source https://nuget.pkg.github.com/GITHUB-USERNAME/index.json --name GitHub --username GITHUB-USERNAME --password ${{secrets.GITHUB_TOKEN}}
+        run: dotnet nuget add source https://nuget.pkg.github.com/scottt732/index.json --name GitHub --username scottt732 --password ${{secrets.GITHUB_TOKEN}}
         shell: pwsh
       - name: "Dotnet NuGet Push"
         run: dotnet nuget push .\*.nupkg --api-key '${{ github.token }}' --source GitHub --skip-duplicate
