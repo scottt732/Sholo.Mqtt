@@ -1,0 +1,77 @@
+name: Docs
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          filter: tree:0
+          lfs: true
+
+      - name: 'Git Fetch Tags'
+        run: git fetch --tags
+
+      - name: Enable nuget package locking
+        run: touch packages.lock.json
+
+      - name: 'Install .NET SDK'
+        uses: actions/setup-dotnet@v3
+        with:
+          global-json-file: global.json
+          cache: true
+
+      - name: 'Dotnet Tool Restore'
+        run: dotnet tool restore
+
+      - name: 'Install markdownlint'
+        run: npm install -g markdownlint-cli
+
+      - name: 'Run markdownlint'
+        run: markdownlint -c "${{ github.workspace }}/.markdownlint.json" "${{ github.workspace }}/Docs"
+
+      - name: Generate table of contents
+        run: DocFxTocGenerator --docfolder "${{ github.workspace }}/Docs" --sequence --override --index
+        continue-on-error: false
+
+      - name: Setup Pages
+        id: pages
+        uses: actions/configure-pages@v3
+
+      - name: DocFX Build
+        run: docfx "${{ github.workspace }}/Docs/docfx.json"
+        continue-on-error: false
+
+      - name: Upload artifact
+        # Automatically uploads an artifact from the './_site' directory by default
+        uses: actions/upload-pages-artifact@v2
+        with:
+          path: ${{ github.workspace }}/Docs/_site
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v2
