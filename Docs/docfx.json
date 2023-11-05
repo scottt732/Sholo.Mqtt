@@ -1,0 +1,78 @@
+{
+  "metadata": [
+    {
+      "src": [
+        {
+          "files": [
+            "Source/**/*.csproj"
+          ],
+          "src": ".."
+        }
+      ],
+      "dest": "api",
+      "outputFormat": "mref",
+      "includePrivateMembers": false,
+      "disableGitFeatures": false,
+      "disableDefaultFilter": false,
+      "noRestore": false,
+      "namespaceLayout": "flattened",
+      "memberLayout": "samePage",
+      "enumSortOrder": "alphabetic",
+      "allowCompilationErrors": false
+    }
+  ],
+  "build": {
+    "content": [
+      {
+        "files": [
+          "api/**.yml",
+          "api/index.md"
+        ]
+      },
+      {
+        "files": [
+          "quick_start/**.md",
+          "quick_start/**/toc.yml",
+          "toc.yml",
+          "*.md"
+        ]
+      }
+    ],
+    "resource": [
+      {
+        "files": [
+          "Images/**"
+        ],
+        "src": "..",
+        "dest": "images"
+      }
+    ],
+    "sitemap": {
+      "baseUrl": "https://mqtt.sholo.net",
+      "priority": 0.5,
+      "changefreq": "daily"
+    },
+    "output": "_site",
+    "globalMetadataFiles": [],
+    "fileMetadataFiles": [],
+    "template": [
+      "default",
+      "modern",
+      "templates/material"
+    ],
+    "postProcessors": [
+      "ExtractSearchIndex"
+    ],
+    "globalMetadata": {
+      "_appTitle": "Sholo.MQTT",
+      "_appFooter": "&copy; Scott Holodak",
+      "_appLogoPath": "images/Icon.png",
+      "_appFaviconPath": "images/Icon.png",
+      "_enableSearch": true,
+      "_enableNewTab": false
+    },
+    "markdownEngineName": "markdig",
+    "keepFileLink": false,
+    "disableGitFeatures": false
+  }
+}

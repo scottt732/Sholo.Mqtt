@@ -6,10 +6,10 @@
 [![Twitter URL](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/scottt732)
 [![Twitter Follow](https://img.shields.io/twitter/follow/scottt732.svg?style=social&label=Follow)](https://twitter.com/scottt732)
 
-Sholo.MQTT is a lightweight ASP.NET Core-inspired framework for applications that consume (and optionally produce)
+Sholo.MQTT is a lightweight ASP.NET Core-inspired framework for applications that consume and/or produce
 MQTT messages.  It bridges [chkr1011/MQTTnet](https://github.com/chkr1011/MQTTnet) with the .NET Generic Host,
 provides an [`IApplicationBuilder`-like pattern](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/middleware/?view=aspnetcore-5.0)
-for configuring your MQTT subscriptions, and provides strongly-typed databinding for topic variables (similar to
+for configuring your MQTT subscriptions, and provides strongly-typed, validated databinding of MQTT payload and topic segments (similar to
 ASP.NET Core's MVC's model binding).
 
 ## Example
@@ -146,7 +146,7 @@ would have never gotten around to releasing any of this.
 ## Related Projects
 
 I've been building a bunch of small utilities, applications, and container related to home automation,
-primarily using MQTT and/or [Home Assistant](https://www.home-assistant.io/). 
+primarily using MQTT and/or [Home Assistant](https://www.home-assistant.io/).
 
 There are a few foundational libraries/frameworks that I've created along the way.  The table shows the third-party pieces
 they're built on.
