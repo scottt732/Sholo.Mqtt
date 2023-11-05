@@ -94,6 +94,8 @@ jobs:
       - name: "Dotnet NuGet Add Source"
         run: dotnet nuget add source https://nuget.pkg.github.com/scottt732/index.json --name GitHub --username 'scottt732' --password '${{secrets.GITHUB_TOKEN}}' --store-password-in-clear-text
         shell: pwsh
+      - name: "Hmm"
+        run: find . -name .git -prune -o -name bin -prune -o -name obj -prune -o -name .vs -prune -o -name .vscode -prune -o -name .devcontainer -prune -o -name _ReSharper.Caches -prune -o -name .scripts -prune -o -name .nuget -prune -o -name .github -prune -o -type d -print
       - name: "Dotnet NuGet Push Libraries"
         run: dotnet nuget push ${{ github.workspace }}/Artifacts/*.nupkg --api-key '${{ github.token }}' --source GitHub --skip-duplicate
         shell: pwsh
