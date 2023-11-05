@@ -6,4 +6,4 @@ This project supports only the latest version with security updates. However, we
 
 ## Reporting a Vulnerability
 
-Contact scottt732@gmail.com|@scottt732 to report a security vulnerability. You will be thanked!
+Contact <scottt732@gmail.com>|@scottt732 to report a security vulnerability. You will be thanked!

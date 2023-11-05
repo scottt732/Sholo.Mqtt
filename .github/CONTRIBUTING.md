@@ -1,4 +1,4 @@
-# All contributions, however small are valued!
+# All contributions, however small are valued
 
 # Steps to contribute
 

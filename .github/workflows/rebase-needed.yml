@@ -1,4 +1,4 @@
-name: "rebase required"
+name: "Rebase Required"
 
 on:
   push:
@@ -6,7 +6,8 @@ on:
     types: [synchronize]
 
 jobs:
-  label-rebase-needed:
+  label-rebase-required:
+    name: Check Rebase Required
     runs-on: ubuntu-latest
     steps:
       - name: Check for merge conflicts
