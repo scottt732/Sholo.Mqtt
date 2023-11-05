@@ -69,11 +69,12 @@
         "yaml.format.enable": true
       },
       "extensions": [
-        "EditorConfig.EditorConfig",
-        "GitHub.copilot",
+        "cake-build.cake-vscode",
         "codezombiech.gitignore",
+        "EditorConfig.EditorConfig",
         "eamodio.gitlens",
         "formulahendry.dotnet-test-explorer",
+        "GitHub.copilot",
         "github.vscode-github-actions",
         "mhutchie.git-graph",
         "michelemelluso.gitignore",
