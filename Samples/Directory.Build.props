@@ -4,8 +4,8 @@
 
   <PropertyGroup Label="Build">
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <IsPackable>false</IsPackable>
   </PropertyGroup>
-
 
   <PropertyGroup Label="Source Link">
     <!-- Optional: Declare that the Repository URL can be published to NuSpec -->

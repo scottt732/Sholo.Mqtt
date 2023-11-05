@@ -1,10 +1,6 @@
 <!--EXTERNAL_PROPERTIES: MinVerVersion-->
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup Label="Build">
-    <TargetFramework>net7.0</TargetFramework>
-  </PropertyGroup>
-
   <PropertyGroup Label="Package">
     <Product>Sholo.Mqtt</Product>
     <Description>Framework for MQTT application development based on chkr1011/MQTTnet with the .NET Generic Host</Description>
