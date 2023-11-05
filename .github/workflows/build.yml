@@ -27,7 +27,6 @@ jobs:
         with:
           fetch-depth: 0
           filter: tree:0
-          lfs: true
 
       - name: 'Git Fetch Tags'
         run: git fetch --tags
