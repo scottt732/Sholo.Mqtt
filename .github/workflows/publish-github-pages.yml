@@ -46,7 +46,7 @@ jobs:
         run: markdownlint -c "${{ github.workspace }}/.markdownlint.json" "${{ github.workspace }}/Docs"
 
       - name: Generate table of contents
-        run: DocFxTocGenerator --docfolder "${{ github.workspace }}/Docs" --sequence --override --index
+        run: dotnet tool run DocFxTocGenerator -- --docfolder "${{ github.workspace }}/Docs" --sequence --override --index
         continue-on-error: false
 
       - name: Setup Pages
@@ -54,7 +54,7 @@ jobs:
         uses: actions/configure-pages@v3
 
       - name: DocFX Build
-        run: docfx "${{ github.workspace }}/Docs/docfx.json"
+        run: dotnet tool run docfx -- "${{ github.workspace }}/Docs/docfx.json"
         continue-on-error: false
 
       - name: Upload artifact
