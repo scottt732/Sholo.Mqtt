@@ -5,12 +5,16 @@ var configuration =
     "Release";
 
 var artifactsDirectory = Directory("./Artifacts");
+var testResultArtifactsDirectory = Directory("./Artifacts/TestResults");
+var packageArtifactsDirectory = Directory("./Artifacts/Packages");
 
 Task("Clean")
     .Description("Cleans the artifacts, bin and obj directories.")
     .Does(() =>
     {
         CleanDirectory(artifactsDirectory);
+        CleanDirectory(testResultArtifactsDirectory);
+        CleanDirectory(packageArtifactsDirectory);
         DeleteDirectories(GetDirectories("**/bin"), new DeleteDirectorySettings() { Force = true, Recursive = true });
         DeleteDirectories(GetDirectories("**/obj"), new DeleteDirectorySettings() { Force = true, Recursive = true });
     });
@@ -56,7 +60,7 @@ Task("Test")
                 },
                 NoBuild = true,
                 NoRestore = true,
-                ResultsDirectory = artifactsDirectory,
+                ResultsDirectory = testResultArtifactsDirectory,
                 ArgumentCustomization = x => x.Append("--blame"),
             });
     });
@@ -74,7 +78,7 @@ Task("Pack")
                 MSBuildSettings = new DotNetMSBuildSettings().WithProperty("SymbolPackageFormat", "snupkg"),
                 NoBuild = true,
                 NoRestore = true,
-                OutputDirectory = artifactsDirectory,
+                OutputDirectory = packageArtifactsDirectory,
             });
     });
 
