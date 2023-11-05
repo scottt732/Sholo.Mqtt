@@ -34,6 +34,7 @@ Task("Build")
             {
                 Configuration = configuration,
                 NoRestore = true,
+                ArgumentCustomization = args => args.Append($"/p:EnableSourceControlManagerQueries=false")
             });
     });
 
