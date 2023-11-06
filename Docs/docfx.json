@@ -41,9 +41,9 @@
     "resource": [
       {
         "files": [
-          "Images/**"
+          "**"
         ],
-        "src": "..",
+        "src": "../Images",
         "dest": "images"
       }
     ],

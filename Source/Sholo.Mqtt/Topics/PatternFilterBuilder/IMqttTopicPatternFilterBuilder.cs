@@ -26,7 +26,7 @@ public interface IMqttTopicPatternFilterBuilder
     /// <remarks>
     /// This is only supported when using MQTTv5. See <a href="https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Subscription_Options">MQTT v5 Subscription Options</a>
     /// </remarks>
-    /// <param name="noLocal">If <code>true</code>, broker would not send application messages with a ClientID equal to the clientID of the publishing connection.</param>
+    /// <param name="noLocal">If <em>true</em>, broker would not send application messages with a ClientID equal to the clientID of the publishing connection.</param>
     /// <returns>The <see cref="IMqttTopicFilterBuilder" /> being configured</returns>
     IMqttTopicPatternFilterBuilder WithNoLocal(bool noLocal);
 
@@ -36,8 +36,8 @@ public interface IMqttTopicPatternFilterBuilder
     /// <remarks>
     /// This is only supported when using MQTTv5. See <a href="https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Subscription_Options">MQTT v5 Subscription Options</a>
     /// </remarks>
-    /// <param name="retainAsPublished">If <code>true</code>, Application Messages forwarded using this subscription keep the RETAIN flag they were published with.
-    /// If <code>false</code>, Application Messages forwarded using this subscription have the RETAIN flag set to 0.</param>
+    /// <param name="retainAsPublished">If <em>true</em>, Application Messages forwarded using this subscription keep the RETAIN flag they were published with.
+    /// If <em>false</em>, Application Messages forwarded using this subscription have the RETAIN flag set to 0.</param>
     /// <returns>The <see cref="IMqttTopicFilterBuilder" /> being configured</returns>
     IMqttTopicPatternFilterBuilder WithRetainAsPublished(bool retainAsPublished);
 

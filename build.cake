@@ -37,8 +37,7 @@ Task("Build")
             new DotNetBuildSettings()
             {
                 Configuration = configuration,
-                NoRestore = true,
-                // ArgumentCustomization = args => args.Append($"/p:EnableSourceControlManagerQueries=false")
+                NoRestore = true
             });
     });
 

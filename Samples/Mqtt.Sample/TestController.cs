@@ -1,5 +1,6 @@
-using System.ComponentModel.DataAnnotations;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Sholo.Mqtt.Controllers;
 
@@ -37,15 +38,4 @@ public class TestController : MqttControllerBase
         cancellationToken.ThrowIfCancellationRequested();
         return Task.FromResult(true);
     }
-}
-
-// test/run/someuser/25/2
-// {"hello":"world","test":"123"}
-[PublicAPI]
-public class RunModel
-{
-    public string Hello { get; set; }
-
-    [Required]
-    public string Test { get; set; }
 }

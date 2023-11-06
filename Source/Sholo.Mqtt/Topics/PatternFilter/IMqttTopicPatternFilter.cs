@@ -10,8 +10,8 @@ public interface IMqttTopicPatternFilter
 {
     /// <summary>
     /// Gets the topic mask to subscribe to. This includes library-specific variable names that will be replaced when
-    /// the actual topic is created for the subscription.  (e.g., <code>test/#topic_part/parts/*topic_parts</code>
-    /// is equivalent to a <see cref="IMqttTopicFilter.Topic" /> value of <code>test/#/parts/*</code>.  The former
+    /// the actual topic is created for the subscription.  (e.g., <em>test/#topic_part/parts/*topic_parts</em>
+    /// is equivalent to a <see cref="IMqttTopicFilter.Topic" /> value of <em>test/#/parts/*</em>.  The former
     /// is used for binding whereas the latter is MQTT-compliant)
     /// </summary>
     string TopicPattern { get; }

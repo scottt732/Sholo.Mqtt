@@ -13,7 +13,7 @@ public interface IMqttTopicFilterBuilder
 
     /// <summary>
     /// The topic (or topic mask) to subscribe to. The builder will remove Sholo.Mqtt library parameter variable names from the mask
-    /// (e.g., <code>test/#topic_part/parts/*topic_parts</code> will be changed to <code>test/#/parts/*</code>)
+    /// (e.g., <em>test/#topic_part/parts/*topic_parts</em> will be changed to <em>test/#/parts/*</em>)
     /// </summary>
     /// <param name="topicPattern">The topic or topic mask to subscribe to</param>
     /// <returns>The <see cref="IMqttTopicFilterBuilder" /> being configured</returns>
@@ -25,7 +25,7 @@ public interface IMqttTopicFilterBuilder
     /// <remarks>
     /// This is only supported when using MQTTv5. See <a href="https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Subscription_Options">MQTT v5 Subscription Options</a>
     /// </remarks>
-    /// <param name="noLocal">If <code>true</code>, broker would not send application messages with a ClientID equal to the clientID of the publishing connection.</param>
+    /// <param name="noLocal">If <em>true</em>, broker would not send application messages with a ClientID equal to the clientID of the publishing connection.</param>
     /// <returns>The <see cref="IMqttTopicFilterBuilder" /> being configured</returns>
     IMqttTopicFilterBuilder WithNoLocal(bool noLocal);
 
@@ -35,8 +35,8 @@ public interface IMqttTopicFilterBuilder
     /// <remarks>
     /// This is only supported when using MQTTv5. See <a href="https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Subscription_Options">MQTT v5 Subscription Options</a>
     /// </remarks>
-    /// <param name="retainAsPublished">If <code>true</code>, Application Messages forwarded using this subscription keep the RETAIN flag they were published with.
-    /// If <code>false</code>, Application Messages forwarded using this subscription have the RETAIN flag set to 0.</param>
+    /// <param name="retainAsPublished">If <em>true</em>, Application Messages forwarded using this subscription keep the RETAIN flag they were published with.
+    /// If <em>false</em>, Application Messages forwarded using this subscription have the RETAIN flag set to 0.</param>
     /// <returns>The <see cref="IMqttTopicFilterBuilder" /> being configured</returns>
     IMqttTopicFilterBuilder WithRetainAsPublished(bool retainAsPublished);
 
