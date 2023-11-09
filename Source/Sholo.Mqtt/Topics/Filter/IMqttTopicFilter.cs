@@ -1,4 +1,7 @@
+#nullable enable
+using System.Collections.Generic;
 using MQTTnet.Protocol;
+using Sholo.Mqtt.ModelBinding.Context;
 
 namespace Sholo.Mqtt.Topics.Filter;
 
@@ -29,4 +32,6 @@ public interface IMqttTopicFilter
     /// Gets a flag that configures whether retained messages are sent when the subscription is established.
     /// </summary>
     MqttRetainHandling RetainHandling { get; }
+
+    bool IsMatch(IMqttRequestContext context, out IReadOnlyDictionary<string, string[]>? topicArguments);
 }

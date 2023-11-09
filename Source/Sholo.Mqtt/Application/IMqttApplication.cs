@@ -1,9 +1,9 @@
-using MQTTnet.Packets;
+using Sholo.Mqtt.Topics.Filter;
 
 namespace Sholo.Mqtt.Application;
 
 public interface IMqttApplication
 {
-    MqttTopicFilter[] TopicFilters { get; }
+    IMqttTopicFilter[] TopicFilters { get; }
     MqttRequestDelegate RequestDelegate { get; }
 }

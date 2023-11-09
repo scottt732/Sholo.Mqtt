@@ -9,16 +9,16 @@ public class MqttTopicPatternPropertyConfigurationBuilder<TParameter> : IMqttTop
 {
     private string ParameterName { get; set; }
     private MethodInfo ValueSetter { get; }
-    private Func<string, object> TypeConverter { get; set; }
+    private Func<string, object?>? TypeConverter { get; set; }
 
     public MqttTopicPatternPropertyConfigurationBuilder(string initialParameterName, Type parameterType, MethodInfo valueSetter)
     {
         ParameterName = initialParameterName;
         ValueSetter = valueSetter;
 
-        if (DefaultTypeConverters.TryGetTypeConverter(parameterType, out var typeConverter))
+        if (DefaultTypeConverters.TryGetStringTypeConverter(parameterType, out var typeConverter))
         {
-            TypeConverter = typeConverter;
+            TypeConverter = typeConverter!;
         }
     }
 
@@ -28,7 +28,7 @@ public class MqttTopicPatternPropertyConfigurationBuilder<TParameter> : IMqttTop
         return this;
     }
 
-    public IMqttTopicPatternPropertyConfigurationBuilder<TParameter> WithTypeConverter(Func<string, TParameter> typeConverter)
+    public IMqttTopicPatternPropertyConfigurationBuilder<TParameter> WithTypeConverter(Func<string, TParameter?> typeConverter)
     {
         TypeConverter = p => typeConverter(p);
         return this;

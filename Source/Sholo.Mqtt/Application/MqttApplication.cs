@@ -1,18 +1,20 @@
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using MQTTnet.Packets;
+using Sholo.Mqtt.Topics.Filter;
 
 namespace Sholo.Mqtt.Application;
 
 internal class MqttApplication : IMqttApplication
 {
-    public MqttTopicFilter[] TopicFilters { get; }
+    public IMqttTopicFilter[] TopicFilters { get; }
     public MqttRequestDelegate RequestDelegate { get; }
 
-    public MqttApplication(IEnumerable<MqttTopicFilter> topicFilters, MqttRequestDelegate requestDelegate)
+    public MqttApplication(IEnumerable<IMqttTopicFilter> topicFilters, MqttRequestDelegate requestDelegate)
     {
-        TopicFilters = topicFilters?.ToArray() ?? Array.Empty<MqttTopicFilter>();
+        TopicFilters = topicFilters?.ToArray() ?? Array.Empty<IMqttTopicFilter>();
         RequestDelegate = requestDelegate;
     }
 }

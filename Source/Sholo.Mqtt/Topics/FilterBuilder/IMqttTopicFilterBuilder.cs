@@ -1,7 +1,9 @@
 using MQTTnet.Protocol;
+using Sholo.Mqtt.Topics.Filter;
 
 namespace Sholo.Mqtt.Topics.FilterBuilder;
 
+[PublicAPI]
 public interface IMqttTopicFilterBuilder
 {
     /// <summary>
@@ -17,7 +19,7 @@ public interface IMqttTopicFilterBuilder
     /// </summary>
     /// <param name="topicPattern">The topic or topic mask to subscribe to</param>
     /// <returns>The <see cref="IMqttTopicFilterBuilder" /> being configured</returns>
-    IMqttTopicFilterBuilder WithTopic(string topicPattern);
+    IMqttTopicFilterBuilder WithTopicPattern(string topicPattern);
 
     /// <summary>
     /// Requests broker to not send application messages forwarded with a ClientID equal to the ClientID of the publishing connection.
@@ -50,4 +52,6 @@ public interface IMqttTopicFilterBuilder
     /// currently exist, or to not send retained subscribed messages.</param>
     /// <returns>The <see cref="IMqttTopicFilterBuilder" /> being configured</returns>
     IMqttTopicFilterBuilder WithRetainHandling(MqttRetainHandling retainHandling);
+
+    IMqttTopicFilter Build();
 }

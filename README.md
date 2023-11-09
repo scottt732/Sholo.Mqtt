@@ -62,7 +62,7 @@ public class TestTypedProcessor : IMqttRequestProcessor<TestParameters>
         Logger = logger;
     }
 
-    public Task<bool> ProcessRequest(MqttRequestContext<TestParameters> context)
+    public Task<bool> ProcessRequest(IMqttRequestContext<TestParameters> context)
     {
         Logger.LogInformation($"{context.TopicParameters.One}");
         Logger.LogInformation($"{context.TopicParameters.Two}");
@@ -97,7 +97,7 @@ public class TestUntypedProcessor : IMqttRequestProcessor
         ManagedMqttClient = managedMqttClient;
     }
 
-    public async Task<bool> ProcessRequest(MqttRequestContext context)
+    public async Task<bool> ProcessRequest(IMqttRequestContext context)
     {
         Logger.LogInformation("Got a message");
 
@@ -126,13 +126,13 @@ While the `IMqttRequestProcessor`s provide you with a higher-level abstraction f
 consuming messages, you can also provide something closer to ASP.NET Core middleware:
 
 ```c#
-public delegate Task<bool> MqttRequestDelegate(MqttRequestContext context);
+public delegate Task<bool> MqttRequestDelegate(IMqttRequestContext context);
 
-public delegate Task<bool> MqttRequestDelegate<TParameters>(MqttRequestContext<TParameters> context)
+public delegate Task<bool> MqttRequestDelegate<TParameters>(IMqttRequestContext<TParameters> context)
     where TParameters : class, new();
 ```
 
-The `MqttRequestContext` class is a simple extension of **chkr1011/MQTTnet**'s [MqttApplicationMessage](https://github.com/chkr1011/MQTTnet/blob/master/Source/MQTTnet/MqttApplicationMessage.cs#L7)
+The `IMqttRequestContext` interface is a superset of **chkr1011/MQTTnet**'s [MqttApplicationMessage](https://github.com/chkr1011/MQTTnet/blob/master/Source/MQTTnet/MqttApplicationMessage.cs#L7)
 with `ClientId` and (optionally) the strongly typed topic parameters.
 
 ## Thanks

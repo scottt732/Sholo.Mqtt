@@ -6,11 +6,6 @@ namespace Sholo.Mqtt;
 
 public class PayloadState
 {
-    public bool IsValid => !Results.Any();
-    public IList<ValidationResult> Results { get; }
-
-    public PayloadState()
-    {
-        Results = new List<ValidationResult>();
-    }
+    public bool IsValid => !ValidationResults.Any();
+    public IList<ValidationResult> ValidationResults { get; } = new List<ValidationResult>();
 }

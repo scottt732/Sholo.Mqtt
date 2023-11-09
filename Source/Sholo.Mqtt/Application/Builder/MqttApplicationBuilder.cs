@@ -15,20 +15,16 @@ public class MqttApplicationBuilder : IMqttApplicationBuilder
     private List<Func<MqttRequestDelegate, MqttRequestDelegate>> Middleware { get; }
 
     public MqttApplicationBuilder(IServiceProvider serviceProvider)
-        : this()
     {
-        Properties = new Dictionary<string, object>(StringComparer.Ordinal);
         ApplicationServices = serviceProvider;
+        Properties = new Dictionary<string, object>(StringComparer.Ordinal);
+        Middleware = new List<Func<MqttRequestDelegate, MqttRequestDelegate>>();
     }
 
-    public MqttApplicationBuilder(MqttApplicationBuilder builder)
-        : this()
+    private MqttApplicationBuilder(MqttApplicationBuilder builder)
     {
+        ApplicationServices = builder.ApplicationServices;
         Properties = new CopyOnWriteDictionary<string, object>(builder.Properties, StringComparer.Ordinal);
-    }
-
-    private MqttApplicationBuilder()
-    {
         Middleware = new List<Func<MqttRequestDelegate, MqttRequestDelegate>>();
     }
 
@@ -54,7 +50,7 @@ public class MqttApplicationBuilder : IMqttApplicationBuilder
 
         var routeProvider = ApplicationServices.GetRequiredService<IRouteProvider>();
 
-        var topicFilters = routeProvider.Endpoints?.Select(x => x.TopicPatternFilter.TopicFilter).ToArray();
+        var topicFilters = routeProvider.Endpoints.Select(x => x.TopicFilter);
 
         return new MqttApplication(topicFilters, app);
     }

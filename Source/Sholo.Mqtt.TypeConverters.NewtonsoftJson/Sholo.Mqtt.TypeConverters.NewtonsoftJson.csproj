@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup Label="Package">
+    <Product>Sholo.Mqtt.TypeConverters.NewtonsoftJson</Product>
+    <Description>JSON.NET-based TypeConverter</Description>
+    <PackageTags>mqtt</PackageTags>
+  </PropertyGroup>
+
+  <Target Name="EmbedLocal" AfterTargets="MinVer" BeforeTargets="PrepareForBuild">
+    <WriteLinesToFile File="$(MSBuildProjectDirectory)\VERSION" Lines="$(MinVerVersion)" Overwrite="true" />
+    <ItemGroup>
+      <EmbeddedResource Include="$(MSBuildProjectDirectory)\VERSION">
+        <LogicalName>VERSION</LogicalName>
+      </EmbeddedResource>
+    </ItemGroup>
+  </Target>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Sholo.Mqtt\Sholo.Mqtt.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="[13.0.3,)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+      <_Parameter1>$(AssemblyName).Test</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+</Project>

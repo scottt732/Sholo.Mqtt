@@ -1,8 +1,11 @@
+#nullable enable
+
 using System;
+using Sholo.Mqtt.ModelBinding.Context;
 
 namespace Sholo.Mqtt.ValueProviders;
 
-public class MqttPayloadValueProvider : IMqttValueProvider<ArraySegment<byte>>
+public class MqttPayloadValueProvider : IMqttPayloadValueProvider
 {
-    public ArraySegment<byte> GetValueSource(ParameterBindingContext context) => context.Request.Payload;
+    public ArraySegment<byte> GetValueSource(IParameterBindingContext context) => context.Request.Payload;
 }

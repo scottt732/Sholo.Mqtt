@@ -1,6 +1,9 @@
+#nullable enable
+
 using System.Reflection;
 using System.Threading;
-using Sholo.Mqtt.Topics.PatternFilter;
+using Sholo.Mqtt.ModelBinding.Context;
+using Sholo.Mqtt.Topics.Filter;
 
 namespace Sholo.Mqtt;
 
@@ -8,36 +11,31 @@ namespace Sholo.Mqtt;
 public class Endpoint
 {
     public MethodInfo Action { get; }
-    public IMqttTopicPatternFilter TopicPatternFilter { get; }
+    public IMqttTopicFilter TopicFilter { get; }
     public MqttRequestDelegate RequestDelegate { get; }
 
     public Endpoint(
         MethodInfo action,
-        IMqttTopicPatternFilter topicPatternFilter,
+        IMqttTopicFilter topicPatternFilter,
         MqttRequestDelegate requestDelegate)
     {
         Action = action;
-        TopicPatternFilter = topicPatternFilter;
+        TopicFilter = topicPatternFilter;
         RequestDelegate = requestDelegate;
     }
 
-    public bool IsMatch(MqttRequestContext context)
+    public bool IsMatch(IMqttRequestContext context)
     {
-        if (TopicPatternFilter.IsMatch(context.Topic, out var topicParameters)
-            && TopicPatternFilter.TopicFilter.QualityOfServiceLevel == context.QualityOfServiceLevel)
+        if (TopicFilter.IsMatch(context, out var topicArguments) && TopicFilter.QualityOfServiceLevel == context.QualityOfServiceLevel)
         {
             var actionParameters = Action.GetParameters();
             var requiredArguments = actionParameters.Length;
 
             foreach (var actionParameter in actionParameters)
             {
-                var parameterName = actionParameter.Name;
+                var parameterName = actionParameter.Name!;
 
-                if (parameterName == null)
-                {
-                    // TODO: Double check
-                }
-                else if (topicParameters.TryGetValue(parameterName, out _))
+                if (topicArguments?.TryGetValue(parameterName, out _) ?? false)
                 {
                     requiredArguments--;
                 }

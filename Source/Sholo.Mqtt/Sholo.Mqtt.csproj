@@ -1,19 +1,11 @@
-<!--EXTERNAL_PROPERTIES: MinVerVersion-->
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup Label="Package">
     <Product>Sholo.Mqtt</Product>
     <Description>Framework for MQTT application development based on chkr1011/MQTTnet with the .NET Generic Host</Description>
     <PackageTags>mqtt</PackageTags>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
-
-  <ItemGroup>
-    <None Remove="ModelBinding\IMqttValueProvider.cs.bak" />
-    <None Remove="ModelBinding\IMqttValueProviderFactory.cs.bak" />
-    <None Remove="ModelBinding\MqttHeaderValueProvider.cs.bak" />
-    <None Remove="ModelBinding\MqttValueProviderFactoryContext.cs.bak" />
-    <None Remove="ModelBinding\MqttValueProviderResult.cs.bak" />
-  </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'net7.0' ">
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="[7.0.0,)" />
@@ -26,8 +18,6 @@
   <ItemGroup>
     <PackageReference Include="MQTTnet" Version="[4.3.1.873,)" />
     <PackageReference Include="MQTTnet.Extensions.ManagedClient" Version="[4.3.1.873,)" />
-    <PackageReference Include="Newtonsoft.Json" Version="[13.0.3,)" />
-    <PackageReference Include="System.Linq.Async" Version="[6.0.1,)" />
   </ItemGroup>
 
   <Target Name="EmbedLocal" AfterTargets="MinVer" BeforeTargets="PrepareForBuild">

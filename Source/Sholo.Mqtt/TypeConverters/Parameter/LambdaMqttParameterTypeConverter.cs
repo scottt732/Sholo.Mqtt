@@ -11,7 +11,7 @@ internal class LambdaMqttParameterTypeConverter<TTargetType> : IMqttParameterTyp
         Converter = converter;
     }
 
-    public bool TryConvert(string value, Type targetType, out object result)
+    public bool TryConvert(string value, Type targetType, out object? result)
     {
         try
         {

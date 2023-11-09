@@ -3,6 +3,7 @@
 
 using System;
 using System.Threading.Tasks;
+using Sholo.Mqtt.ModelBinding.Context;
 
 namespace Sholo.Mqtt.Internal;
 
@@ -14,23 +15,23 @@ public interface IControllerActivator
     /// <summary>
     /// Creates a controller.
     /// </summary>
-    /// <param name="context">The <see cref="MqttRequestContext"/> for the executing action.</param>
+    /// <param name="context">The <see cref="IMqttRequestContext"/> for the executing action.</param>
     /// <param name="controllerType">The controller type to create.</param>
     /// <returns>An instance of the controller type specified</returns>
-    object Create(MqttRequestContext context, Type controllerType);
+    object Create(IMqttRequestContext context, Type controllerType);
 
     /// <summary>
     /// Releases a controller.
     /// </summary>
-    /// <param name="context">The <see cref="MqttRequestContext"/> for the executing action.</param>
+    /// <param name="context">The <see cref="IMqttRequestContext"/> for the executing action.</param>
     /// <param name="controller">The controller to release.</param>
-    void Release(MqttRequestContext context, object controller);
+    void Release(IMqttRequestContext context, object controller);
 
     /// <summary>
     /// Releases a controller asynchronously.
     /// </summary>
-    /// <param name="context">The <see cref="MqttRequestContext"/> for the executing action.</param>
+    /// <param name="context">The <see cref="IMqttRequestContext"/> for the executing action.</param>
     /// <param name="controller">The controller to release.</param>
     /// <returns>A <see cref="ValueTask" /> for the disposal</returns>
-    ValueTask ReleaseAsync(MqttRequestContext context, object controller);
+    ValueTask ReleaseAsync(IMqttRequestContext context, object controller);
 }

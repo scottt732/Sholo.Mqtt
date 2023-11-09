@@ -1,13 +1,15 @@
+#nullable enable
+
 using System;
-using MQTTnet.Packets;
 using MQTTnet.Protocol;
-using Sholo.Mqtt.Topics.FilterSanitizer;
+using Sholo.Mqtt.Topics.Filter;
+using Sholo.Mqtt.Topics.PatternMatcherFactory;
 
 namespace Sholo.Mqtt.Topics.FilterBuilder;
 
 internal class MqttTopicFilterBuilder : IMqttTopicFilterBuilder
 {
-    protected string Topic { get; set; }
+    private string? TopicPattern { get; set; }
     private MqttQualityOfServiceLevel? QualityOfServiceLevel { get; set; }
     private bool? NoLocal { get; set; }
     private bool? RetainAsPublished { get; set; }
@@ -19,9 +21,9 @@ internal class MqttTopicFilterBuilder : IMqttTopicFilterBuilder
         return this;
     }
 
-    public IMqttTopicFilterBuilder WithTopic(string topicPattern)
+    public IMqttTopicFilterBuilder WithTopicPattern(string topicPattern)
     {
-        Topic = topicPattern != null ? TopicFilterSanitizer.SanitizeTopic(topicPattern) : null;
+        TopicPattern = topicPattern;
         return this;
     }
 
@@ -43,38 +45,28 @@ internal class MqttTopicFilterBuilder : IMqttTopicFilterBuilder
         return this;
     }
 
-    public MqttTopicFilter Build()
+    public IMqttTopicFilter Build()
     {
-        if (Topic == null)
+        if (TopicPattern == null)
         {
-            throw new ArgumentNullException(nameof(Topic), $"The {nameof(Topic)} cannot be null");
+            throw new ArgumentNullException(nameof(TopicPattern), $"The {nameof(TopicPattern)} cannot be null");
         }
 
-        if (Topic.Length == 0)
+        if (TopicPattern.Length == 0)
         {
-            throw new ArgumentException($"The {nameof(Topic)} must be non-empty", nameof(Topic));
+            throw new ArgumentException($"The {nameof(TopicPattern)} must be non-empty", nameof(TopicPattern));
         }
 
-        var result = new MqttTopicFilter
-        {
-            Topic = Topic,
-            QualityOfServiceLevel = QualityOfServiceLevel ?? MqttQualityOfServiceLevel.AtMostOnce
-        };
+        var topicPatternMatcher = new TopicPatternMatcherFactory()
+            .CreateTopicPatternMatcher(TopicPattern!);
 
-        if (NoLocal.HasValue)
-        {
-            result.NoLocal = NoLocal.Value;
-        }
-
-        if (RetainAsPublished.HasValue)
-        {
-            result.RetainAsPublished = RetainAsPublished.Value;
-        }
-
-        if (RetainHandling.HasValue)
-        {
-            result.RetainHandling = RetainHandling.Value;
-        }
+        var result = new MqttTopicFilter(
+            topicPatternMatcher,
+            QualityOfServiceLevel ?? MqttQualityOfServiceLevel.AtMostOnce,
+            NoLocal ?? false,
+            RetainAsPublished ?? false,
+            RetainHandling ?? MqttRetainHandling.SendAtSubscribe
+        );
 
         return result;
     }

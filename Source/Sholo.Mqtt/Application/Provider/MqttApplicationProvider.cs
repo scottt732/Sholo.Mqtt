@@ -6,24 +6,25 @@ using Sholo.Mqtt.Application.BuilderConfiguration;
 
 namespace Sholo.Mqtt.Application.Provider;
 
-public class MqttApplicationProvider : IMqttApplicationProvider
+public sealed class MqttApplicationProvider : IMqttApplicationProvider
 {
-    public IServiceProvider ServiceProvider { get; }
-    public event EventHandler<ApplicationChangedEventArgs> ApplicationChanged;
+    private IServiceProvider ServiceProvider { get; }
 
-    public IMqttApplication Current
+    public event EventHandler<ApplicationChangedEventArgs>? ApplicationChanged;
+
+    public IMqttApplication? Current
     {
         get => _current;
-        set
+        private set
         {
-            var previous = _current;
+            var previous = _current ?? throw new InvalidOperationException();
             _current = value;
 
-            OnApplicationChanged(previous, _current);
+            OnApplicationChanged(previous, _current!);
         }
     }
 
-    private IMqttApplication _current;
+    private IMqttApplication? _current;
     private IConfigureMqttApplicationBuilder[] ConfigureMqttApplicationBuilders { get; }
 
     public MqttApplicationProvider(
@@ -31,7 +32,7 @@ public class MqttApplicationProvider : IMqttApplicationProvider
         IEnumerable<IConfigureMqttApplicationBuilder> configureMqttApplicationBuilders)
     {
         ServiceProvider = serviceProvider;
-        ConfigureMqttApplicationBuilders = configureMqttApplicationBuilders?.ToArray() ?? Array.Empty<IConfigureMqttApplicationBuilder>();
+        ConfigureMqttApplicationBuilders = configureMqttApplicationBuilders.ToArray();
     }
 
     public void Rebuild()
@@ -40,12 +41,12 @@ public class MqttApplicationProvider : IMqttApplicationProvider
 
         foreach (var configureMqttApplicationBuilder in ConfigureMqttApplicationBuilders)
         {
-            configureMqttApplicationBuilder?.ConfigureMqttApplication(applicationBuilder);
+            configureMqttApplicationBuilder.ConfigureMqttApplication(applicationBuilder);
         }
 
         Current = applicationBuilder.Build();
     }
 
-    protected virtual void OnApplicationChanged(IMqttApplication previous, IMqttApplication current)
+    private void OnApplicationChanged(IMqttApplication? previous, IMqttApplication current)
         => ApplicationChanged?.Invoke(this, new ApplicationChangedEventArgs(previous, current));
 }

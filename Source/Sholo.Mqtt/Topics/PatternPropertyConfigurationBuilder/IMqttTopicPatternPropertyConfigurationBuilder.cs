@@ -11,5 +11,5 @@ public interface IMqttTopicPatternPropertyConfigurationBuilder
 public interface IMqttTopicPatternPropertyConfigurationBuilder<in TParameter> : IMqttTopicPatternPropertyConfigurationBuilder
 {
     IMqttTopicPatternPropertyConfigurationBuilder<TParameter> WithParameterName(string parameterName);
-    IMqttTopicPatternPropertyConfigurationBuilder<TParameter> WithTypeConverter(Func<string, TParameter> typeConverter);
+    IMqttTopicPatternPropertyConfigurationBuilder<TParameter> WithTypeConverter(Func<string, TParameter?> typeConverter);
 }

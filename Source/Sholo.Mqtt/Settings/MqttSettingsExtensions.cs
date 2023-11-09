@@ -1,40 +1,25 @@
+using System;
 using MQTTnet;
 
 namespace Sholo.Mqtt.Settings;
 
 public static class MqttSettingsExtensions
 {
-    public static MqttApplicationMessage GetOnlineApplicationMessage(this MqttSettings settings)
+    public static MqttApplicationMessage? GetOnlineApplicationMessage(this MqttSettings mqttSettings)
     {
-        return settings?.OnlineMessage?.Topic != null && settings.OnlineMessage?.Payload != null
-            ? BuildApplicationMessage(settings.OnlineMessage)
+        ArgumentNullException.ThrowIfNull(mqttSettings, nameof(mqttSettings));
+
+        return mqttSettings.OnlineMessage is { Topic: not null, Payload: not null }
+            ? mqttSettings.OnlineMessage.ToMqttApplicationMessage()
             : null;
     }
 
-    public static MqttApplicationMessage GetLastWillAndTestamentApplicationMessage(this MqttSettings settings)
+    public static MqttApplicationMessage? GetLastWillAndTestamentApplicationMessage(this MqttSettings mqttSettings)
     {
-        return settings?.LastWillAndTestament?.Topic != null && settings.LastWillAndTestament?.Payload != null
-            ? BuildApplicationMessage(settings.LastWillAndTestament)
+        ArgumentNullException.ThrowIfNull(mqttSettings, nameof(mqttSettings));
+
+        return mqttSettings.LastWillAndTestament is { Topic: not null, Payload: not null }
+            ? mqttSettings.LastWillAndTestament.ToMqttApplicationMessage()
             : null;
-    }
-
-    private static MqttApplicationMessage BuildApplicationMessage(MqttMessageSettings mqttMessageSettings)
-    {
-        var mqttMessageBuilder = new MqttApplicationMessageBuilder()
-            .WithTopic(mqttMessageSettings.Topic)
-            .WithPayload(mqttMessageSettings.Payload);
-
-        if (mqttMessageSettings.QualityOfServiceLevel.HasValue)
-        {
-            mqttMessageBuilder = mqttMessageBuilder.WithQualityOfServiceLevel(mqttMessageSettings.QualityOfServiceLevel.Value);
-        }
-
-        if (mqttMessageSettings.Retain.HasValue)
-        {
-            mqttMessageBuilder = mqttMessageBuilder.WithRetainFlag(mqttMessageSettings.Retain.Value);
-        }
-
-        var mqttMessage = mqttMessageBuilder.Build();
-        return mqttMessage;
     }
 }

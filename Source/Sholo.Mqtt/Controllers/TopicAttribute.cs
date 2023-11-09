@@ -6,11 +6,11 @@ namespace Sholo.Mqtt.Controllers;
 public sealed class TopicAttribute : Attribute
 {
     public string TopicPattern { get; }
-    public string Name { get; }
+    public string? Name { get; }
 
     public TopicAttribute(
         string topicPattern,
-        string name = null)
+        string? name = null)
     {
         TopicPattern = topicPattern;
         Name = name;

@@ -1,4 +1,3 @@
-using System;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
 using Microsoft.Extensions.DependencyInjection;
@@ -8,25 +7,22 @@ using MQTTnet;
 using MQTTnet.Client;
 using MQTTnet.Extensions.ManagedClient;
 using MQTTnet.Formatter;
-using MQTTnet.Server;
 using Sholo.Mqtt.Application.Provider;
 using Sholo.Mqtt.Consumer;
 using Sholo.Mqtt.DependencyInjection;
 using Sholo.Mqtt.Internal;
 using Sholo.Mqtt.Settings;
-using Sholo.Mqtt.TypeConverters;
-using Sholo.Mqtt.TypeConverters.NewtonsoftJson;
 
 namespace Sholo.Mqtt;
 
 [PublicAPI]
 public static class ServiceCollectionExtensions
 {
-    public static IMqttServiceCollection AddMqttServices<TMqttSettings>(this IServiceCollection services, string configurationName)
+    public static IMqttServiceCollection AddMqttServices<TMqttSettings>(this IServiceCollection services, string configSectionPath)
         where TMqttSettings : MqttSettings, new()
     {
         services.AddOptions<TMqttSettings>()
-            .BindConfiguration(configurationName)
+            .BindConfiguration(configSectionPath)
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
@@ -49,9 +45,9 @@ public static class ServiceCollectionExtensions
                         x.WithCertificateValidationHandler(_ => true);
                     }
 
-                    if (!string.IsNullOrEmpty(mqttSettings.ClientCertificatePrivateKey) && !string.IsNullOrEmpty(mqttSettings.ClientCertificatePublicKey))
+                    if (!string.IsNullOrEmpty(mqttSettings.ClientCertificatePrivateKeyPemFile) && !string.IsNullOrEmpty(mqttSettings.ClientCertificatePublicKeyPemFile))
                     {
-                        x.WithClientCertificates(new[] { X509Certificate2.CreateFromPemFile(mqttSettings.ClientCertificatePublicKey, mqttSettings.ClientCertificatePrivateKey) });
+                        x.WithClientCertificates(new[] { X509Certificate2.CreateFromPemFile(mqttSettings.ClientCertificatePublicKeyPemFile, mqttSettings.ClientCertificatePrivateKeyPemFile) });
                     }
                 });
             }
@@ -109,13 +105,13 @@ public static class ServiceCollectionExtensions
             return client;
         });
 
-        return new MqttServiceCollection(services);
+        return new MqttServiceCollection(services, configSectionPath);
     }
 
-    public static IMqttServiceCollection AddManagedMqttServices<TMqttSettings>(this IServiceCollection services, string configurationName)
+    public static IMqttServiceCollection AddManagedMqttServices<TMqttSettings>(this IServiceCollection services, string configSectionPath)
         where TMqttSettings : ManagedMqttSettings, new()
     {
-        services.AddMqttServices<TMqttSettings>(configurationName);
+        services.AddMqttServices<TMqttSettings>(configSectionPath);
 
         services.AddSingleton(sp =>
         {
@@ -124,14 +120,26 @@ public static class ServiceCollectionExtensions
             var mqttClientOptions = sp.GetRequiredService<MqttClientOptions>();
 
             var managedMqttClientOptionsBuilder = new ManagedMqttClientOptionsBuilder()
-                .WithClientOptions(mqttClientOptions)
-                .WithPendingMessagesOverflowStrategy(mqttManagedSettings.PendingMessagesOverflowStrategy ?? MqttPendingMessagesOverflowStrategy.DropNewMessage)
-                .WithAutoReconnectDelay(mqttManagedSettings.AutoReconnectDelay ?? TimeSpan.FromSeconds(5.0))
-                .WithMaxPendingMessages(mqttManagedSettings.MaxPendingMessages ?? int.MaxValue);
+                .WithClientOptions(mqttClientOptions);
 
-            if (managedMqttClientStorage != null)
+            if (mqttManagedSettings.MaxPendingMessages.HasValue)
             {
-                managedMqttClientOptionsBuilder = managedMqttClientOptionsBuilder.WithStorage(managedMqttClientStorage);
+                managedMqttClientOptionsBuilder = managedMqttClientOptionsBuilder.WithMaxPendingMessages(mqttManagedSettings.MaxPendingMessages.Value);
+            }
+
+            if (mqttManagedSettings.PendingMessagesOverflowStrategy.HasValue)
+            {
+                managedMqttClientOptionsBuilder = managedMqttClientOptionsBuilder.WithPendingMessagesOverflowStrategy(mqttManagedSettings.PendingMessagesOverflowStrategy.Value);
+            }
+
+            if (mqttManagedSettings.AutoReconnectDelay.HasValue)
+            {
+                managedMqttClientOptionsBuilder = managedMqttClientOptionsBuilder.WithAutoReconnectDelay(mqttManagedSettings.AutoReconnectDelay.Value);
+            }
+
+            if (mqttManagedSettings.MaxTopicFiltersInSubscribeUnsubscribePackets.HasValue)
+            {
+                managedMqttClientOptionsBuilder = managedMqttClientOptionsBuilder.WithMaxTopicFiltersInSubscribeUnsubscribePackets(mqttManagedSettings.MaxTopicFiltersInSubscribeUnsubscribePackets.Value);
             }
 
             if (managedMqttClientStorage != null)
@@ -151,22 +159,22 @@ public static class ServiceCollectionExtensions
             return mqttClient;
         });
 
-        return new MqttServiceCollection(services);
+        return new MqttServiceCollection(services, configSectionPath);
     }
 
-    public static IMqttServiceCollection AddManagedMqttServices<TMqttSettings, TStorage>(this IServiceCollection services, string configurationName)
+    public static IMqttServiceCollection AddManagedMqttServices<TMqttSettings, TStorage>(this IServiceCollection services, string configSectionPath)
         where TMqttSettings : ManagedMqttSettings, new()
         where TStorage : class, IManagedMqttClientStorage
     {
         services.AddSingleton<IManagedMqttClientStorage, TStorage>();
-        services.AddManagedMqttServices<TMqttSettings>(configurationName);
+        services.AddManagedMqttServices<TMqttSettings>(configSectionPath);
 
-        return new MqttServiceCollection(services);
+        return new MqttServiceCollection(services, configSectionPath);
     }
 
     public static IMqttServiceCollection AddMqttConsumerService<TMqttSettings>(
         this IServiceCollection services,
-        string configurationName
+        string configSectionPath
     )
         where TMqttSettings : ManagedMqttSettings, new()
     {
@@ -175,27 +183,15 @@ public static class ServiceCollectionExtensions
         services.TryAddSingleton<IRouteProvider, RouteProvider>();
 
         services.TryAddSingleton<IMqttApplicationProvider, MqttApplicationProvider>();
-        services.AddManagedMqttServices<TMqttSettings>(configurationName);
+        services.AddManagedMqttServices<TMqttSettings>(configSectionPath);
         services.AddHostedService<MqttConsumerService<TMqttSettings>>();
 
-        return new MqttServiceCollection(services);
+        return new MqttServiceCollection(services, configSectionPath);
     }
 
     public static IMqttServiceCollection AddMqttConsumerService(
         this IServiceCollection services,
-        string configurationName
+        string configSectionPath
     )
-        => services.AddMqttConsumerService<ManagedMqttSettings>(configurationName);
-
-    public static IMqttServiceCollection AddNewtonsoftJsonPayloadConverter(
-        this IMqttServiceCollection services,
-        Action<NewtonsoftJsonTypeConverterOptions> configuration = null)
-    {
-        services.Configure<NewtonsoftJsonTypeConverterOptions>(opt => { configuration?.Invoke(opt); });
-
-        services.TryAddSingleton<NewtonsoftJsonTypeConverter>();
-        services.TryAddSingleton<IMqttRequestPayloadTypeConverter>(sp => sp.GetRequiredService<NewtonsoftJsonTypeConverter>());
-
-        return services;
-    }
+        => services.AddMqttConsumerService<ManagedMqttSettings>(configSectionPath);
 }

@@ -7,5 +7,5 @@ public interface IMqttApplicationProvider
     event EventHandler<ApplicationChangedEventArgs> ApplicationChanged;
 
     void Rebuild();
-    IMqttApplication Current { get; }
+    IMqttApplication? Current { get; }
 }

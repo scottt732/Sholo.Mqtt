@@ -8,11 +8,11 @@ public class MqttTopicPatternPropertyConfiguration : IMqttTopicPatternPropertyCo
     public string ParameterName { get; }
     public bool HaveTypeConverter => TypeConverter != null;
 
-    public object GetParameterValue(string value)
+    public object? GetParameterValue(string value)
     {
         if (HaveTypeConverter)
         {
-            return TypeConverter(value);
+            return TypeConverter!(value);
         }
 
         return null;
@@ -26,12 +26,12 @@ public class MqttTopicPatternPropertyConfiguration : IMqttTopicPatternPropertyCo
 
     // ReSharper restore UnusedAutoPropertyAccessor.Local
 #pragma warning restore IDE0052 // Remove unread private members
-    private Func<string, object> TypeConverter { get; set; }
+    private Func<string, object?>? TypeConverter { get; set; }
 
     public MqttTopicPatternPropertyConfiguration(
         string parameterName,
         MethodInfo valueSetter,
-        Func<string, object> typeConverter)
+        Func<string, object?>? typeConverter)
     {
         ParameterName = parameterName;
         ValueSetter = valueSetter;

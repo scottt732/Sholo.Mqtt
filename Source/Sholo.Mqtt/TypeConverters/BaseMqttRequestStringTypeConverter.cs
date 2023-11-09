@@ -5,9 +5,9 @@ namespace Sholo.Mqtt.TypeConverters;
 
 public abstract class BaseMqttRequestStringTypeConverter : IMqttRequestStringTypeConverter
 {
-    protected Encoding Encoding { get; }
+    private Encoding Encoding { get; }
 
-    protected BaseMqttRequestStringTypeConverter(Encoding encoding = null)
+    protected BaseMqttRequestStringTypeConverter(Encoding? encoding = null)
     {
         Encoding = encoding ?? Encoding.UTF8;
     }

@@ -1,9 +1,12 @@
+#nullable enable
+
 using System;
 using System.Linq;
+using Sholo.Mqtt.ModelBinding.Context;
 
 namespace Sholo.Mqtt.ValueProviders;
 
-public class MqttUserPropertyValueProvider : IMqttValueProvider<string>
+public class MqttUserPropertyValueProvider : IMqttUserPropertyValueProvider
 {
     public string PropertyName { get; }
     public StringComparison StringComparison { get; }
@@ -14,11 +17,11 @@ public class MqttUserPropertyValueProvider : IMqttValueProvider<string>
         StringComparison = stringComparison;
     }
 
-    public string GetValueSource(ParameterBindingContext context)
+    public string[] GetValueSource(IParameterBindingContext context)
     {
         return context.Request.MqttUserProperties
             .Where(x => x.Name.Equals(PropertyName, StringComparison))
             .Select(x => x.Value)
-            .FirstOrDefault();
+            .ToArray();
     }
 }

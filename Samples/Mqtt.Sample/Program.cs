@@ -1,5 +1,4 @@
 using System.Text;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -8,6 +7,7 @@ using Newtonsoft.Json.Serialization;
 using Sholo.Mqtt;
 using Sholo.Mqtt.Application.Builder;
 using Sholo.Mqtt.Hosting;
+using Sholo.Mqtt.TypeConverters.NewtonsoftJson;
 
 namespace Mqtt.Sample;
 
@@ -20,11 +20,14 @@ public static class Program
             {
                 cb.AddJsonFile("appsettings.json");
             })
-            .ConfigureLogging(lb => { lb.AddSimpleConsole(opt => { opt.SingleLine = true; }); })
+            .ConfigureLogging(lb =>
+            {
+                lb.AddSimpleConsole(opt => { opt.SingleLine = true; });
+            })
             .ConfigureServices((_, services) =>
             {
                 services.AddMqttConsumerService("mqtt")
-                    .AddNewtonsoftJsonPayloadConverter(opt =>
+                    .AddNewtonsoftJsonTypeConverter(opt =>
                     {
                         opt.Encoding = Encoding.UTF8;
                         opt.SerializerSettings = new JsonSerializerSettings
@@ -33,8 +36,16 @@ public static class Program
                         };
                     });
             })
-            .ConfigureMqttHost(app => { app.UseRouting(); })
-            .UseConsoleLifetime(opt => { opt.SuppressStatusMessages = true; })
+            .ConfigureMqttHost(app =>
+            {
+                // This enables automatic resolution of controllers from any loaded assemblies that have the `MqttApplicationPart` attribute.
+                // In this example, the attribute is added via <AssemblyAttribute Include="MqttApplicationPart" /> in Mqtt.Sample.csproj.
+                app.UseRouting();
+            })
+            .UseConsoleLifetime(opt =>
+            {
+                opt.SuppressStatusMessages = true;
+            })
             .Build()
             .RunAsync();
     }

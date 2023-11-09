@@ -9,9 +9,10 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MQTTnet.Client;
 using MQTTnet.Extensions.ManagedClient;
-using MQTTnet.Packets;
 using Sholo.Mqtt.Application.Provider;
+using Sholo.Mqtt.ModelBinding.Context;
 using Sholo.Mqtt.Settings;
+using Sholo.Mqtt.Topics.Filter;
 
 namespace Sholo.Mqtt.Consumer;
 
@@ -103,10 +104,10 @@ public sealed class MqttConsumerService<TManagedMqttSettings> : BackgroundServic
     }
 
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "VSTHRD100:Avoid async void methods", Justification = "Event handler")]
-    private async void OnApplicationChanged(object sender, ApplicationChangedEventArgs e)
+    private async void OnApplicationChanged(object? sender, ApplicationChangedEventArgs e)
     {
-        var previousTopicFilters = e.Previous?.TopicFilters.ToArray() ?? Array.Empty<MqttTopicFilter>();
-        var currentTopicFilters = e.Current?.TopicFilters.ToArray() ?? Array.Empty<MqttTopicFilter>();
+        var previousTopicFilters = e.Previous?.TopicFilters.ToArray() ?? Array.Empty<IMqttTopicFilter>();
+        var currentTopicFilters = e.Current?.TopicFilters.ToArray() ?? Array.Empty<IMqttTopicFilter>();
 
         if (previousTopicFilters.Length > 0 || currentTopicFilters.Length > 0)
         {
@@ -248,7 +249,7 @@ public sealed class MqttConsumerService<TManagedMqttSettings> : BackgroundServic
         return Task.CompletedTask;
     }
 
-    private async Task UnsubscribeTopicsAsync(MqttTopicFilter[] previousTopicFilters)
+    private async Task UnsubscribeTopicsAsync(IMqttTopicFilter[] previousTopicFilters)
     {
         if (previousTopicFilters == null)
         {
@@ -259,7 +260,7 @@ public sealed class MqttConsumerService<TManagedMqttSettings> : BackgroundServic
         await MqttClient.UnsubscribeAsync(topics);
     }
 
-    private async Task SubscribeToTopicsAsync(MqttTopicFilter[] currentTopicFilters)
+    private async Task SubscribeToTopicsAsync(IMqttTopicFilter[] currentTopicFilters)
     {
         if (currentTopicFilters == null)
         {
@@ -268,17 +269,6 @@ public sealed class MqttConsumerService<TManagedMqttSettings> : BackgroundServic
 
         if (currentTopicFilters.Length > 0)
         {
-            foreach (var topicFilter in currentTopicFilters)
-            {
-                Logger.LogInformation(
-                    " - {Topic} | QoS={QoS} NoLocal={NoLocal} RetainAsPublished={RetainAsPublished} RetainHandling={RetainHandling}",
-                    topicFilter.Topic,
-                    topicFilter.QualityOfServiceLevel,
-                    topicFilter.NoLocal,
-                    topicFilter.RetainAsPublished,
-                    topicFilter.RetainHandling);
-            }
-
             if (currentTopicFilters.Length > 0)
             {
                 foreach (var topicFilter in currentTopicFilters)
@@ -292,7 +282,7 @@ public sealed class MqttConsumerService<TManagedMqttSettings> : BackgroundServic
                         topicFilter.RetainHandling);
                 }
 
-                await MqttClient.SubscribeAsync(currentTopicFilters);
+                await MqttClient.SubscribeAsync(currentTopicFilters.Select(x => x.ToMqttNetTopicFilter()).ToArray());
             }
         }
     }

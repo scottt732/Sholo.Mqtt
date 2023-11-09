@@ -3,6 +3,7 @@
 
 using System;
 using System.Threading.Tasks;
+using Sholo.Mqtt.ModelBinding.Context;
 
 namespace Sholo.Mqtt.Internal;
 
@@ -19,7 +20,7 @@ internal class DefaultControllerActivator : IControllerActivator
     }
 
     /// <inheritdoc />
-    public object Create(MqttRequestContext controllerContext, Type controllerType)
+    public object Create(IMqttRequestContext controllerContext, Type controllerType)
     {
         ArgumentNullException.ThrowIfNull(controllerContext, nameof(controllerContext));
 
@@ -29,7 +30,7 @@ internal class DefaultControllerActivator : IControllerActivator
     }
 
     /// <inheritdoc />
-    public void Release(MqttRequestContext context, object controller)
+    public void Release(IMqttRequestContext context, object controller)
     {
         ArgumentNullException.ThrowIfNull(context, nameof(context));
         ArgumentNullException.ThrowIfNull(controller, nameof(controller));
@@ -40,7 +41,8 @@ internal class DefaultControllerActivator : IControllerActivator
         }
     }
 
-    public ValueTask ReleaseAsync(MqttRequestContext context, object controller)
+    /// <inheritdoc />
+    public ValueTask ReleaseAsync(IMqttRequestContext context, object controller)
     {
         ArgumentNullException.ThrowIfNull(context, nameof(context));
         ArgumentNullException.ThrowIfNull(controller, nameof(controller));

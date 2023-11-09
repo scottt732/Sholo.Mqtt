@@ -8,3 +8,4 @@ using System.Diagnostics.CodeAnalysis;
 [assembly: SuppressMessage("Style", "IDE0300:Simplify collection initialization", Justification = "Conflicts with new C# functionality", Scope = "module")]
 [assembly: SuppressMessage("Style", "IDE0301:Simplify collection initialization", Justification = "Conflicts with new C# functionality", Scope = "module")]
 [assembly: SuppressMessage("Style", "IDE0305:Simplify collection initialization", Justification = "Conflicts with new C# functionality", Scope = "module")]
+[assembly: SuppressMessage("StyleCop.CSharp.SpacingRules", "SA1011:Closing square brackets should be spaced correctly", Justification = "Code style not enforced")]

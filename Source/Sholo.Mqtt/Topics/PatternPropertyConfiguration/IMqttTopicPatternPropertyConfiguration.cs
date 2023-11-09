@@ -4,5 +4,5 @@ public interface IMqttTopicPatternPropertyConfiguration
 {
     string ParameterName { get; }
     bool HaveTypeConverter { get; }
-    object GetParameterValue(string value);
+    object? GetParameterValue(string value);
 }

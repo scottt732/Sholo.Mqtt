@@ -6,9 +6,12 @@ namespace Sholo.Mqtt.DependencyInjection;
 
 internal class MqttServiceCollection : BaseServiceCollectionExtender, IMqttServiceCollection
 {
-    public MqttServiceCollection(IServiceCollection target)
+    public string ConfigSectionPath { get; }
+
+    public MqttServiceCollection(IServiceCollection target, string configSectionPath)
         : base(target)
     {
+        ConfigSectionPath = configSectionPath;
     }
 
     public IMqttServiceCollection AddMqttApplicationPart(Assembly assembly)

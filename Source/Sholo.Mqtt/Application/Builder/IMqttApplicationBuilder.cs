@@ -11,13 +11,6 @@ public interface IMqttApplicationBuilder
     /// </summary>
     IServiceProvider ApplicationServices { get; set; }
 
-    /*
-    /// <summary>
-    /// Gets the set of HTTP features the application's server provides.
-    /// </summary>
-    IFeatureCollection ServerFeatures { get; }
-    */
-
     /// <summary>
     /// Gets a key/value collection that can be used to share data between middleware.
     /// </summary>
@@ -84,7 +77,5 @@ public interface IMqttApplicationBuilder
     IMqttApplicationBuilder Use<TPayload>(
         TypedMqttRequestDelegate<TPayload> requestDelegate)
             where TPayload : class;
-
-    IMqttApplication Build();
     */
 }

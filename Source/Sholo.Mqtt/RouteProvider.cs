@@ -1,6 +1,7 @@
+#nullable enable
+
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using System.Linq;
@@ -11,11 +12,13 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Sholo.Mqtt.Controllers;
 using Sholo.Mqtt.Internal;
-using Sholo.Mqtt.Topics.PatternFilter;
-using Sholo.Mqtt.Topics.PatternFilterBuilder;
+using Sholo.Mqtt.ModelBinding.Context;
+using Sholo.Mqtt.Topics.Filter;
+using Sholo.Mqtt.Topics.FilterBuilder;
 using Sholo.Mqtt.TypeConverters;
 using Sholo.Mqtt.TypeConverters.Parameter;
 using Sholo.Mqtt.TypeConverters.Payload;
+using Sholo.Mqtt.Utilities;
 
 namespace Sholo.Mqtt;
 
@@ -25,7 +28,7 @@ public class RouteProvider : IRouteProvider
 
     private IControllerActivator ControllerActivator { get; }
 
-    public Endpoint GetEndpoint(MqttRequestContext context)
+    public Endpoint? GetEndpoint(IMqttRequestContext context)
     {
         return Endpoints.FirstOrDefault(endpoint => endpoint.IsMatch(context));
     }
@@ -56,12 +59,13 @@ public class RouteProvider : IRouteProvider
                 .Where(m => m.ReturnType == typeof(bool) || m.ReturnType == typeof(Task<bool>))
                 .Select(m => GetEndpoint(ctrl, m)))
             .Where(x => x != null)
+            .Select(x => x!)
             .ToArray();
 
         Endpoints = endpoints;
     }
 
-    private Endpoint GetEndpoint(
+    private Endpoint? GetEndpoint(
         Type controller,
         MethodInfo action)
     {
@@ -87,7 +91,7 @@ public class RouteProvider : IRouteProvider
         var retainHandlingAttribute = action.GetCustomAttribute<RetainHandlingAttribute>() ??
                                       controller.GetCustomAttribute<RetainHandlingAttribute>();
 
-        var topicPatternFilter = GetTopicPatternFilter(
+        var topicFilter = GetTopicFilter(
             topicPrefixAttribute,
             topicAttribute,
             noLocalAttribute,
@@ -106,11 +110,11 @@ public class RouteProvider : IRouteProvider
             action,
             topicName,
             controllerName,
-            topicPatternFilter);
+            topicFilter);
 
         return new Endpoint(
             action,
-            topicPatternFilter,
+            topicFilter,
             requestDelegate);
     }
 
@@ -119,39 +123,70 @@ public class RouteProvider : IRouteProvider
         MethodInfo action,
         string topicName,
         string controllerName,
-        IMqttTopicPatternFilter topicPatternFilter
+        IMqttTopicFilter topicPatternFilter
     )
     {
         return async requestContext =>
         {
+            // See if the request message's topic matches the pattern & extract arguments
+            if (!topicPatternFilter.IsMatch(requestContext, out var topicArguments))
+            {
+                return false;
+            }
+
             var logger = requestContext.ServiceProvider.GetService<ILogger<RouteProvider>>();
 
             var actionParameters = action.GetParameters();
-
             var parametersBindingContext = new ParametersBindingContext(
                 action,
                 topicName,
-                topicPatternFilter,
                 requestContext,
-                logger,
-                null
+                topicArguments!,
+                logger
             );
 
-            if (!TryBindActionParameters(parametersBindingContext, out var actionArguments))
+            // Attempt to bind the topic arguments, services, etc. to the action/method parameters
+            if (!TryBindActionParameters(parametersBindingContext, out var actionArguments, out var payloadParameter))
             {
                 return false;
             }
 
+            // Handle the case where we couldn't match 100% of the action arguments to parameters
             if (actionArguments.Count != actionParameters.Length)
             {
                 var unmatchedParameters = string.Join(", ", actionArguments.Keys.Except(actionParameters).Select(x => x.Name));
-                logger?.LogDebug("Failed to bind the following parameters: {UnmatchedParameters}", unmatchedParameters);
+
+                logger?.LogDebug(
+                    "Evaluating candidate handler {TopicName} ({Controller}.{Action}): Failed to bind the following parameters: {UnmatchedParameters}",
+                    topicName,
+                    controllerName,
+                    action.Name,
+                    unmatchedParameters
+                );
                 return false;
             }
 
-            if (!parametersBindingContext.PayloadState.IsValid)
+            // Handle the case where the bound payload is invalid
+            var payloadBindingContext = new PayloadBindingContext(
+                parametersBindingContext,
+                actionArguments,
+                payloadParameter!
+            );
+
+            if (!TryBindAndValidateActionPayload(payloadBindingContext, out var payload, out var validationResults))
             {
+                logger?.LogWarning(
+                    "Evaluating candidate handler {TopicName} ({Controller}.{Action}): The message payload failed validation:{NewLine}{ValidationErrors}",
+                    topicName,
+                    controllerName,
+                    action.Name,
+                    Environment.NewLine,
+                    string.Join(Environment.NewLine, validationResults!.Select(x => $"{x.ErrorMessage} ({string.Join(", ", x.MemberNames)})"))
+                );
+                return false;
             }
+
+            actionArguments[payloadParameter!] = payload;
 
             logger?.LogDebug(
                 "Executing {TopicName} ({Controller}.{Action})",
@@ -161,49 +196,58 @@ public class RouteProvider : IRouteProvider
 
             var stopwatch = Stopwatch.StartNew();
 
-            var controllerInstance = ControllerActivator.Create(requestContext, controllerType);
+            var controllerInstance = ControllerActivator.Create(requestContext, controllerType)!;
 
             if (controllerInstance is MqttControllerBase controllerBase)
             {
                 controllerBase.Request = requestContext;
             }
 
-            var resultTask = (Task<bool>)action.Invoke(controllerInstance, actionArguments.Values.ToArray());
+            var result = false;
+            try
+            {
+                var resultTask = (Task<bool>)action.Invoke(controllerInstance, actionArguments.Values.ToArray())!;
+                result = await resultTask;
 
-            var result = await resultTask!;
-
-            logger?.LogDebug(
-                "Executed {TopicName} ({Controller}.{Action}) in {Duration:F0}ms",
-                topicName,
-                controllerName,
-                action.Name,
-                stopwatch.ElapsedMilliseconds);
-
-            await ControllerActivator.ReleaseAsync(requestContext, controllerInstance);
+                logger?.LogDebug(
+                    "Executed {TopicName} ({Controller}.{Action}) in {Duration:F0}ms",
+                    topicName,
+                    controllerName,
+                    action.Name,
+                    stopwatch.ElapsedMilliseconds
+                );
+            }
+            catch (Exception exc)
+            {
+                logger?.LogError(
+                    exc,
+                    "Error executing {TopicName} ({Controller}.{Action}): {Message}",
+                    topicName,
+                    controllerName,
+                    action.Name,
+                    exc.Message
+                );
+            }
+            finally
+            {
+                await ControllerActivator.ReleaseAsync(requestContext, controllerInstance);
+            }
 
             return result;
         };
     }
 
-    private bool TryBindActionParameters(ParametersBindingContext parametersBindingContext, out IDictionary<ParameterInfo, object> actionArguments)
+    private bool TryBindActionParameters(IParametersBindingContext parametersBindingContext, out IDictionary<ParameterInfo, object?> actionArguments, out ParameterInfo? payloadParameter)
     {
-        actionArguments = new Dictionary<ParameterInfo, object>();
+        actionArguments = new Dictionary<ParameterInfo, object?>();
 
-        if (!parametersBindingContext.TopicPatternFilter.IsMatch(parametersBindingContext.Request.Topic, out var readWriteTopicArguments))
-        {
-            return false;
-        }
-
-        var topicArguments = new ReadOnlyDictionary<string, string>(readWriteTopicArguments);
-
-        ParameterInfo unboundParameter = null;
+        ParameterInfo? unboundParameter = null;
         var actionParameters = parametersBindingContext.Action.GetParameters();
 
         foreach (var actionParameter in actionParameters)
         {
             var parameterBindingContext = new ParameterBindingContext(
                 parametersBindingContext,
-                topicArguments,
                 actionArguments,
                 actionParameter
             );
@@ -220,6 +264,7 @@ public class RouteProvider : IRouteProvider
             if (unboundParameter != null)
             {
                 // There can only be 1 unmatched parameter (the one that might be the payload)
+                payloadParameter = null;
                 return false;
             }
 
@@ -230,66 +275,28 @@ public class RouteProvider : IRouteProvider
 
         if (unboundParameter == null)
         {
+            parametersBindingContext.Logger?.LogWarning("No remaining parameters available for payload binding");
+            payloadParameter = null;
+            return false;
+        }
+
+        payloadParameter = unboundParameter;
+        return true;
+    }
+
+    private bool TryBindAndValidateActionPayload(IPayloadBindingContext payloadBindingContext, out object? payload, out ValidationResult[]? validationResults)
+    {
+        if (TryBindPayload(payloadBindingContext, out payload) && ValidationHelper.TryValidateObject(payload!, out validationResults))
+        {
             return true;
         }
 
-        var payloadBindingContext = new PayloadBindingContext(
-            parametersBindingContext,
-            topicArguments,
-            actionArguments,
-            unboundParameter);
-
-        if (!TryBindAndValidateActionPayload(payloadBindingContext, out var isValid))
-        {
-            return false;
-        }
-
-        if (!isValid)
-        {
-            // var body = Encoding.ASCII.GetString(payloadBindingContext.Request.Payload);
-
-            payloadBindingContext.Logger?.LogWarning(
-                "Request validation failed: {ValidationErrors}",
-                string.Join(", ", payloadBindingContext.PayloadState.Results.Select(x => $"{x.ErrorMessage}")));
-        }
-
-        return true;
+        payload = null;
+        validationResults = null;
+        return false;
     }
 
-    private bool TryBindAndValidateActionPayload(PayloadBindingContext payloadBindingContext, out bool isValid)
-    {
-        if (!TryBindPayload(payloadBindingContext))
-        {
-            isValid = false;
-            return false;
-        }
-
-        isValid = TryValidatePayload(payloadBindingContext);
-
-        return true;
-    }
-
-    private bool TryValidatePayload(PayloadBindingContext payloadBindingContext)
-    {
-        var validationContext = new ValidationContext(payloadBindingContext.Payload);
-
-        var validationResults = new List<ValidationResult>();
-
-        var success = Validator.TryValidateObject(
-            payloadBindingContext.Payload,
-            validationContext,
-            validationResults,
-            validateAllProperties: true);
-
-        foreach (var validationResult in validationResults)
-        {
-            payloadBindingContext.PayloadState.Results.Add(validationResult);
-        }
-
-        return success;
-    }
-
-    private bool TryBindCancellationToken(ParameterBindingContext parameterBindingContext)
+    private bool TryBindCancellationToken(IParameterBindingContext parameterBindingContext)
     {
         if (parameterBindingContext.ActionParameter.ParameterType != typeof(CancellationToken))
         {
@@ -302,25 +309,50 @@ public class RouteProvider : IRouteProvider
         return true;
     }
 
-    private bool TryBindParameter(ParameterBindingContext parameterBindingContext)
+    private bool TryBindParameter(IParameterBindingContext parameterBindingContext)
     {
         var explicitTypeConverter = CreateRequestedTypeConverter<FromMqttTopicAttribute, IMqttParameterTypeConverter>(
             parameterBindingContext,
             parameterBindingContext.ActionParameter,
             a => a.TypeConverterType);
 
-        if (!parameterBindingContext.TopicArguments.TryGetValue(parameterBindingContext.ActionParameter.Name!, out var argumentValueString))
+        if (parameterBindingContext.TopicArguments == null || !parameterBindingContext.TopicArguments.TryGetValue(parameterBindingContext.ActionParameter.Name!, out var argumentValueStrings))
         {
             return false;
         }
 
-        if (argumentValueString == null)
+        if (argumentValueStrings.Length == 0)
         {
             parameterBindingContext.Value = null;
             return true;
         }
 
-        if (parameterBindingContext.TryConvert(argumentValueString, explicitTypeConverter, parameterBindingContext.ActionParameter.ParameterType, out var argumentValue))
+        var actionParameterParameterType = parameterBindingContext.ActionParameter.ParameterType;
+        if (actionParameterParameterType.IsArray)
+        {
+            var elementType = actionParameterParameterType.GetElementType()!;
+            var array = Array.CreateInstance(elementType, argumentValueStrings.Length);
+            for (var i = 0; i < argumentValueStrings.Length; i++)
+            {
+                if (!parameterBindingContext.TryConvert(argumentValueStrings[i], explicitTypeConverter, elementType, out var typedArgumentValue))
+                {
+                    parameterBindingContext.Logger?.LogWarning(
+                        "Unable to convert parameter {ParameterName} value to {ParameterType}",
+                        parameterBindingContext.ActionParameter.Name,
+                        elementType
+                    );
+
+                    return false;
+                }
+
+                array.SetValue(typedArgumentValue, i);
+            }
+
+            parameterBindingContext.Value = array;
+            return true;
+        }
+
+        if (parameterBindingContext.TryConvert(argumentValueStrings.Single(), explicitTypeConverter, actionParameterParameterType, out var argumentValue))
         {
             parameterBindingContext.Value = argumentValue;
             return true;
@@ -329,7 +361,7 @@ public class RouteProvider : IRouteProvider
         parameterBindingContext.Logger?.LogWarning(
             "Unable to convert parameter {ParameterName} value to {ParameterType}",
             parameterBindingContext.ActionParameter.Name,
-            parameterBindingContext.ActionParameter.ParameterType
+            actionParameterParameterType
         );
 
         return false;
@@ -379,7 +411,7 @@ public class RouteProvider : IRouteProvider
         return true;
     }
 
-    private bool TryBindPayload(PayloadBindingContext payloadBindingContext)
+    private bool TryBindPayload(IPayloadBindingContext payloadBindingContext, out object? payload)
     {
         var parameterType = payloadBindingContext.PayloadParameter.ParameterType;
 
@@ -390,30 +422,30 @@ public class RouteProvider : IRouteProvider
 
         if (explicitTypeConverter != null && explicitTypeConverter.TryConvertPayload(payloadBindingContext.Request.Payload, parameterType, out var payloadResult))
         {
-            payloadBindingContext.Payload = payloadResult;
+            payload = payloadResult;
             return true;
         }
 
         if (DefaultTypeConverters.TryConvert(payloadBindingContext.Request.Payload, parameterType, out payloadResult))
         {
-            payloadBindingContext.Payload = payloadResult;
+            payload = payloadResult;
             return true;
         }
 
         if (payloadBindingContext.PayloadTypeConverter.TryConvertPayload(payloadBindingContext.Request.Payload, parameterType, out payloadResult))
         {
-            payloadBindingContext.Payload = payloadResult;
+            payload = payloadResult;
             return true;
         }
 
-        payloadBindingContext.Payload = default;
+        payload = null!;
         return false;
     }
 
-    private TTypeConverter CreateRequestedTypeConverter<TAttribute, TTypeConverter>(
-        ParametersBindingContext parametersBindingContext,
+    private TTypeConverter? CreateRequestedTypeConverter<TAttribute, TTypeConverter>(
+        IParametersBindingContext parametersBindingContext,
         ParameterInfo actionParameter,
-        Func<TAttribute, Type> typeConverterTypeSelector)
+        Func<TAttribute, Type?> typeConverterTypeSelector)
         where TAttribute : Attribute
         where TTypeConverter : class
     {
@@ -436,17 +468,17 @@ public class RouteProvider : IRouteProvider
         return typeConverter;
     }
 
-    private IMqttTopicPatternFilter GetTopicPatternFilter(
-        TopicPrefixAttribute topicPrefixAttribute,
+    private IMqttTopicFilter GetTopicFilter(
+        TopicPrefixAttribute? topicPrefixAttribute,
         TopicAttribute topicAttribute,
-        NoLocalAttribute noLocalAttribute,
-        QualityOfServiceAttribute qualityOfServiceAttribute,
-        RetainAsPublishedAttribute retainAsPublishedAttribute,
-        RetainHandlingAttribute retainHandlingAttribute)
+        NoLocalAttribute? noLocalAttribute,
+        QualityOfServiceAttribute? qualityOfServiceAttribute,
+        RetainAsPublishedAttribute? retainAsPublishedAttribute,
+        RetainHandlingAttribute? retainHandlingAttribute)
     {
         var topicPrefix = topicPrefixAttribute?.TopicPrefix?.TrimEnd('/');
-        var topicPattern = topicAttribute?.TopicPattern.TrimStart('/');
-        var topic = !string.IsNullOrEmpty(topicPrefix)
+        var topicPattern = topicAttribute.TopicPattern.TrimStart('/');
+        var effectiveTopicPattern = !string.IsNullOrEmpty(topicPrefix)
             ? $"{topicPrefix}/{topicPattern}"
             : topicPattern;
 
@@ -455,7 +487,7 @@ public class RouteProvider : IRouteProvider
         var retainAsPublished = retainAsPublishedAttribute?.RetainAsPublished;
         var retainHandling = retainHandlingAttribute?.RetainHandling;
 
-        var mqttTopicFilterBuilder = new MqttTopicPatternFilterBuilder();
+        var mqttTopicFilterBuilder = new MqttTopicFilterBuilder();
 
         if (noLocal.HasValue)
         {
@@ -477,10 +509,10 @@ public class RouteProvider : IRouteProvider
             mqttTopicFilterBuilder.WithRetainHandling(retainHandling.Value);
         }
 
-        mqttTopicFilterBuilder.WithTopicPattern(topic);
+        mqttTopicFilterBuilder.WithTopicPattern(effectiveTopicPattern);
 
-        var mqttTopicPatternFilter = mqttTopicFilterBuilder.Build();
+        var mqttTopicFilter = mqttTopicFilterBuilder.Build();
 
-        return mqttTopicPatternFilter;
+        return mqttTopicFilter;
     }
 }

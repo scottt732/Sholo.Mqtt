@@ -1,6 +1,10 @@
+#nullable enable
+
+using Sholo.Mqtt.ModelBinding.Context;
+
 namespace Sholo.Mqtt.ValueProviders;
 
-public class MqttCorrelationDataValueProvider : IMqttValueProvider<byte[]>
+public class MqttCorrelationDataValueProvider : IMqttCorrelationDataValueProvider
 {
-    public byte[] GetValueSource(ParameterBindingContext context) => context.Request.CorrelationData;
+    public byte[]? GetValueSource(IParameterBindingContext context) => context.Request.CorrelationData;
 }
