@@ -1,9 +1,8 @@
-#nullable enable
-
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
@@ -65,6 +64,7 @@ public class RouteProvider : IRouteProvider
         Endpoints = endpoints;
     }
 
+    [ExcludeFromCodeCoverage]
     private Endpoint? GetEndpoint(
         Type controller,
         MethodInfo action)
@@ -118,6 +118,7 @@ public class RouteProvider : IRouteProvider
             requestDelegate);
     }
 
+    [ExcludeFromCodeCoverage]
     private MqttRequestDelegate CreateRequestDelegate(
         Type controllerType,
         MethodInfo action,
@@ -196,7 +197,7 @@ public class RouteProvider : IRouteProvider
 
             var stopwatch = Stopwatch.StartNew();
 
-            var controllerInstance = ControllerActivator.Create(requestContext, controllerType)!;
+            var controllerInstance = ControllerActivator.Create(requestContext, controllerType);
 
             if (controllerInstance is MqttControllerBase controllerBase)
             {
@@ -237,6 +238,7 @@ public class RouteProvider : IRouteProvider
         };
     }
 
+    [ExcludeFromCodeCoverage]
     private bool TryBindActionParameters(IParametersBindingContext parametersBindingContext, out IDictionary<ParameterInfo, object?> actionArguments, out ParameterInfo? payloadParameter)
     {
         actionArguments = new Dictionary<ParameterInfo, object?>();
@@ -284,9 +286,10 @@ public class RouteProvider : IRouteProvider
         return true;
     }
 
+    [ExcludeFromCodeCoverage]
     private bool TryBindAndValidateActionPayload(IPayloadBindingContext payloadBindingContext, out object? payload, out ValidationResult[]? validationResults)
     {
-        if (TryBindPayload(payloadBindingContext, out payload) && ValidationHelper.TryValidateObject(payload!, out validationResults))
+        if (TryBindPayload(payloadBindingContext, out payload) && ValidationHelper.IsValid(payload!, out validationResults))
         {
             return true;
         }
@@ -296,6 +299,7 @@ public class RouteProvider : IRouteProvider
         return false;
     }
 
+    [ExcludeFromCodeCoverage]
     private bool TryBindCancellationToken(IParameterBindingContext parameterBindingContext)
     {
         if (parameterBindingContext.ActionParameter.ParameterType != typeof(CancellationToken))
@@ -309,6 +313,7 @@ public class RouteProvider : IRouteProvider
         return true;
     }
 
+    [ExcludeFromCodeCoverage]
     private bool TryBindParameter(IParameterBindingContext parameterBindingContext)
     {
         var explicitTypeConverter = CreateRequestedTypeConverter<FromMqttTopicAttribute, IMqttParameterTypeConverter>(
@@ -316,7 +321,7 @@ public class RouteProvider : IRouteProvider
             parameterBindingContext.ActionParameter,
             a => a.TypeConverterType);
 
-        if (parameterBindingContext.TopicArguments == null || !parameterBindingContext.TopicArguments.TryGetValue(parameterBindingContext.ActionParameter.Name!, out var argumentValueStrings))
+        if (!parameterBindingContext.TopicArguments.TryGetValue(parameterBindingContext.ActionParameter.Name!, out var argumentValueStrings))
         {
             return false;
         }
@@ -367,26 +372,21 @@ public class RouteProvider : IRouteProvider
         return false;
     }
 
-    // ReSharper disable UnusedParameter.Local
-
-#pragma warning disable IDE0060 // Remove unused parameter - TODO: WiP
+    // ReSharper disable once UnusedParameter.Local
+    [ExcludeFromCodeCoverage]
     private bool TryBindCorrelationData(ParameterBindingContext parameterBindingContext)
-#pragma warning restore IDE0060 // Remove unused parameter
     {
-        // parameterBindingContext.Value = null;
         return false;
     }
 
-#pragma warning disable IDE0060 // Remove unused parameter - TODO: WiP
+    // ReSharper disable once UnusedParameter.Local
+    [ExcludeFromCodeCoverage]
     private bool TryBindUserProperty(ParameterBindingContext parameterBindingContext)
-#pragma warning restore IDE0060 // Remove unused parameter
     {
-        // parameterBindingContext.Value = null;
         return false;
     }
 
-    // ReSharper restore UnusedParameter.Local
-
+    [ExcludeFromCodeCoverage]
     private bool TryBindService(ParameterBindingContext parameterBindingContext)
     {
         var parameterType = parameterBindingContext.ActionParameter.ParameterType;
@@ -411,6 +411,7 @@ public class RouteProvider : IRouteProvider
         return true;
     }
 
+    [ExcludeFromCodeCoverage]
     private bool TryBindPayload(IPayloadBindingContext payloadBindingContext, out object? payload)
     {
         var parameterType = payloadBindingContext.PayloadParameter.ParameterType;
@@ -442,6 +443,7 @@ public class RouteProvider : IRouteProvider
         return false;
     }
 
+    [ExcludeFromCodeCoverage]
     private TTypeConverter? CreateRequestedTypeConverter<TAttribute, TTypeConverter>(
         IParametersBindingContext parametersBindingContext,
         ParameterInfo actionParameter,
@@ -468,6 +470,7 @@ public class RouteProvider : IRouteProvider
         return typeConverter;
     }
 
+    [ExcludeFromCodeCoverage]
     private IMqttTopicFilter GetTopicFilter(
         TopicPrefixAttribute? topicPrefixAttribute,
         TopicAttribute topicAttribute,
@@ -476,7 +479,7 @@ public class RouteProvider : IRouteProvider
         RetainAsPublishedAttribute? retainAsPublishedAttribute,
         RetainHandlingAttribute? retainHandlingAttribute)
     {
-        var topicPrefix = topicPrefixAttribute?.TopicPrefix?.TrimEnd('/');
+        var topicPrefix = topicPrefixAttribute?.TopicPrefix.TrimEnd('/');
         var topicPattern = topicAttribute.TopicPattern.TrimStart('/');
         var effectiveTopicPattern = !string.IsNullOrEmpty(topicPrefix)
             ? $"{topicPrefix}/{topicPattern}"

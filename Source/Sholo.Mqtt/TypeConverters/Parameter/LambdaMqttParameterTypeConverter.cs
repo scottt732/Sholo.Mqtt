@@ -4,7 +4,7 @@ namespace Sholo.Mqtt.TypeConverters.Parameter;
 
 internal class LambdaMqttParameterTypeConverter<TTargetType> : IMqttParameterTypeConverter
 {
-    public Func<string, TTargetType> Converter { get; }
+    private Func<string, TTargetType> Converter { get; }
 
     public LambdaMqttParameterTypeConverter(Func<string, TTargetType> converter)
     {

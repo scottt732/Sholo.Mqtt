@@ -1,5 +1,3 @@
-#nullable enable
-
 using System.Collections.Generic;
 using System.Reflection;
 using Sholo.Mqtt.TypeConverters;

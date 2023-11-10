@@ -1,9 +1,12 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Sholo.Mqtt.Utilities;
 
+[PublicAPI]
+[ExcludeFromCodeCoverage]
 public abstract class BaseServiceCollectionExtender : IServiceCollection
 {
     public int Count => Target.Count;

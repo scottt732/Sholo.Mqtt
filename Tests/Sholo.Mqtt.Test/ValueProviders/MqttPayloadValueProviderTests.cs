@@ -42,7 +42,7 @@ public class MqttPayloadValueProviderTests
     {
         MockMqttRequestContext
             .SetupGet(x => x.Payload)
-            .Returns(() => null)
+            .Returns(() => null!)
             .Verifiable(Times.Once);
 
         var payload = MqttPayloadValueProvider.GetValueSource(MockParameterBindingContext.Object);

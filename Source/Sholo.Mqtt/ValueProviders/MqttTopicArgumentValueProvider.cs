@@ -1,5 +1,3 @@
-#nullable enable
-
 using Sholo.Mqtt.ModelBinding.Context;
 
 namespace Sholo.Mqtt.ValueProviders;
@@ -15,7 +13,7 @@ public class MqttTopicArgumentValueProvider : IMqttTopicArgumentValueProvider
 
     public string[]? GetValueSource(IParameterBindingContext context)
     {
-        if (context.TopicArguments?.TryGetValue(ParameterName, out var values) ?? false)
+        if (context.TopicArguments.TryGetValue(ParameterName, out var values))
         {
             return values;
         }

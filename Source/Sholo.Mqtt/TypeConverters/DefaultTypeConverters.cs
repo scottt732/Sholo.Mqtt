@@ -1,7 +1,6 @@
-#nullable enable
-
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Text;
 
@@ -10,6 +9,7 @@ namespace Sholo.Mqtt.TypeConverters;
 [PublicAPI]
 public static class DefaultTypeConverters
 {
+    [ExcludeFromCodeCoverage]
     private static Dictionary<Type, Func<string, object?>> StringTypeConverters { get; } =
         new()
         {
@@ -41,6 +41,7 @@ public static class DefaultTypeConverters
             [typeof(string)] = str => str
         };
 
+    [ExcludeFromCodeCoverage]
     private static Dictionary<Type, Func<ArraySegment<byte>, object?>> BinaryTypeConverters { get; } =
         new()
         {

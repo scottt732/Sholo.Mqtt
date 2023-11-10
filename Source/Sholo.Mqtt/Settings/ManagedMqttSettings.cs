@@ -1,5 +1,3 @@
-#nullable enable
-
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -39,19 +37,19 @@ public class ManagedMqttSettings : MqttSettings
             yield return result;
         }
 
-        if (MaxPendingMessages is < 0)
+        if (MaxPendingMessages is <= 0)
         {
-            yield return new ValidationResult($"{nameof(MaxPendingMessages)} must be greater than 0", new[] { nameof(MaxPendingMessages) });
+            yield return new ValidationResult($"{nameof(MaxPendingMessages)} must be greater than 0.", new[] { nameof(MaxPendingMessages) });
         }
 
         if (AutoReconnectDelay?.TotalSeconds < 0)
         {
-            yield return new ValidationResult($"{nameof(AutoReconnectDelay)} must be positive", new[] { nameof(AutoReconnectDelay) });
+            yield return new ValidationResult($"{nameof(AutoReconnectDelay)} must be greater than or equal to 0.", new[] { nameof(AutoReconnectDelay) });
         }
 
         if (MaxTopicFiltersInSubscribeUnsubscribePackets is < 0)
         {
-            yield return new ValidationResult($"{nameof(MaxTopicFiltersInSubscribeUnsubscribePackets)} must be greater than 0", new[] { nameof(MaxTopicFiltersInSubscribeUnsubscribePackets) });
+            yield return new ValidationResult($"{nameof(MaxTopicFiltersInSubscribeUnsubscribePackets)} must be greater than or equal to 0.", new[] { nameof(MaxTopicFiltersInSubscribeUnsubscribePackets) });
         }
     }
 }

@@ -8,6 +8,7 @@ public interface IMqttTopicPatternPropertyConfigurationBuilder
     IMqttTopicPatternPropertyConfiguration Build();
 }
 
+[PublicAPI]
 public interface IMqttTopicPatternPropertyConfigurationBuilder<in TParameter> : IMqttTopicPatternPropertyConfigurationBuilder
 {
     IMqttTopicPatternPropertyConfigurationBuilder<TParameter> WithParameterName(string parameterName);

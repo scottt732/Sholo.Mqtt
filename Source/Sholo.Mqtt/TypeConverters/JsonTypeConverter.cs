@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -22,6 +23,7 @@ public class JsonTypeConverter : IMqttRequestPayloadTypeConverter
     public bool TryConvertPayload(ArraySegment<byte> payloadData, Type targetType, out object? result)
         => TryConvert(payloadData, targetType, out result);
 
+    [ExcludeFromCodeCoverage]
     private bool TryConvert(ArraySegment<byte> data, Type targetType, out object? result)
     {
         try

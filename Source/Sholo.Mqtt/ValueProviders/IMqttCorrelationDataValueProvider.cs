@@ -1,5 +1,3 @@
-#nullable enable
-
 namespace Sholo.Mqtt.ValueProviders;
 
 [PublicAPI]

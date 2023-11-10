@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Linq;
 using System.Threading;
@@ -60,10 +61,11 @@ public sealed class MqttConsumerService<TManagedMqttSettings> : BackgroundServic
             ApplicationProvider.ApplicationChanged -= OnApplicationChanged;
         }
 
-        MqttClient?.Dispose();
+        MqttClient.Dispose();
         base.Dispose();
     }
 
+    [ExcludeFromCodeCoverage]
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         MqttClient.ApplicationMessageProcessedAsync += OnApplicationMessageProcessedAsync;
@@ -103,11 +105,12 @@ public sealed class MqttConsumerService<TManagedMqttSettings> : BackgroundServic
         blockUntilStopRequested.Dispose();
     }
 
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "VSTHRD100:Avoid async void methods", Justification = "Event handler")]
+    [ExcludeFromCodeCoverage]
+    [SuppressMessage("Usage", "VSTHRD100:Avoid async void methods", Justification = "Event handler")]
     private async void OnApplicationChanged(object? sender, ApplicationChangedEventArgs e)
     {
         var previousTopicFilters = e.Previous?.TopicFilters.ToArray() ?? Array.Empty<IMqttTopicFilter>();
-        var currentTopicFilters = e.Current?.TopicFilters.ToArray() ?? Array.Empty<IMqttTopicFilter>();
+        var currentTopicFilters = e.Current.TopicFilters.ToArray();
 
         if (previousTopicFilters.Length > 0 || currentTopicFilters.Length > 0)
         {
@@ -126,12 +129,14 @@ public sealed class MqttConsumerService<TManagedMqttSettings> : BackgroundServic
         }
     }
 
+    [ExcludeFromCodeCoverage]
     private Task OnSynchronizingSubscriptionsFailedAsync(ManagedProcessFailedEventArgs eventArgs)
     {
         Logger.LogError(eventArgs.Exception, "Failed to synchronize subscriptions: {Message}", eventArgs.Exception.Message);
         return Task.CompletedTask;
     }
 
+    [ExcludeFromCodeCoverage]
     private Task OnConnectingFailedAsync(ConnectingFailedEventArgs eventArgs)
     {
         if (eventArgs.Exception != null)
@@ -146,6 +151,7 @@ public sealed class MqttConsumerService<TManagedMqttSettings> : BackgroundServic
         return Task.CompletedTask;
     }
 
+    [ExcludeFromCodeCoverage]
     private Task OnDisconnectedAsync(MqttClientDisconnectedEventArgs eventArgs)
     {
         if (IsShuttingDown)
@@ -169,6 +175,7 @@ public sealed class MqttConsumerService<TManagedMqttSettings> : BackgroundServic
         return Task.CompletedTask;
     }
 
+    [ExcludeFromCodeCoverage]
     private Task OnConnectedAsync(MqttClientConnectedEventArgs eventArgs)
     {
         Logger.LogInformation("Connected to MQTT broker");
@@ -202,6 +209,7 @@ public sealed class MqttConsumerService<TManagedMqttSettings> : BackgroundServic
         return Task.CompletedTask;
     }
 
+    [ExcludeFromCodeCoverage]
     private async Task OnApplicationMessageReceivedAsync(MqttApplicationMessageReceivedEventArgs eventArgs)
     {
         var application = ApplicationProvider.Current;
@@ -220,7 +228,7 @@ public sealed class MqttConsumerService<TManagedMqttSettings> : BackgroundServic
 
         try
         {
-            success = application.RequestDelegate != null && await application.RequestDelegate.Invoke(context);
+            success = await application.RequestDelegate.Invoke(context);
 
             if (!success)
             {
@@ -237,19 +245,22 @@ public sealed class MqttConsumerService<TManagedMqttSettings> : BackgroundServic
         eventArgs.ProcessingFailed = !success;
     }
 
+    [ExcludeFromCodeCoverage]
     private Task OnApplicationMessageProcessedAsync(ApplicationMessageProcessedEventArgs eventArgs)
     {
         Logger.LogDebug("Request processed.");
         return Task.CompletedTask;
     }
 
+    [ExcludeFromCodeCoverage]
     private Task OnApplicationMessageSkippedAsync(ApplicationMessageSkippedEventArgs eventArgs)
     {
         Logger.LogWarning("Request skipped.");
         return Task.CompletedTask;
     }
 
-    private async Task UnsubscribeTopicsAsync(IMqttTopicFilter[] previousTopicFilters)
+    [ExcludeFromCodeCoverage]
+    private async Task UnsubscribeTopicsAsync(IMqttTopicFilter[]? previousTopicFilters)
     {
         if (previousTopicFilters == null)
         {
@@ -260,37 +271,34 @@ public sealed class MqttConsumerService<TManagedMqttSettings> : BackgroundServic
         await MqttClient.UnsubscribeAsync(topics);
     }
 
+    [ExcludeFromCodeCoverage]
     private async Task SubscribeToTopicsAsync(IMqttTopicFilter[] currentTopicFilters)
     {
-        if (currentTopicFilters == null)
+        if (currentTopicFilters.Length == 0)
         {
             return;
         }
 
-        if (currentTopicFilters.Length > 0)
+        foreach (var topicFilter in currentTopicFilters)
         {
-            if (currentTopicFilters.Length > 0)
-            {
-                foreach (var topicFilter in currentTopicFilters)
-                {
-                    Logger.LogInformation(
-                        " - {Topic} | QoS={QoS} NoLocal={NoLocal} RetainAsPublished={RetainAsPublished} RetainHandling={RetainHandling}",
-                        topicFilter.Topic,
-                        topicFilter.QualityOfServiceLevel,
-                        topicFilter.NoLocal,
-                        topicFilter.RetainAsPublished,
-                        topicFilter.RetainHandling);
-                }
-
-                await MqttClient.SubscribeAsync(currentTopicFilters.Select(x => x.ToMqttNetTopicFilter()).ToArray());
-            }
+            Logger.LogInformation(
+                " - {Topic} | QoS={QoS} NoLocal={NoLocal} RetainAsPublished={RetainAsPublished} RetainHandling={RetainHandling}",
+                topicFilter.Topic,
+                topicFilter.QualityOfServiceLevel,
+                topicFilter.NoLocal,
+                topicFilter.RetainAsPublished,
+                topicFilter.RetainHandling);
         }
+
+        await MqttClient.SubscribeAsync(currentTopicFilters.Select(x => x.ToMqttNetTopicFilter()).ToArray());
     }
 
+    [ExcludeFromCodeCoverage]
     private void LogDisconnectEvent(MqttClientDisconnectedEventArgs eventArgs)
     {
         if (!IsShuttingDown && eventArgs.Reason != MqttClientDisconnectReason.NormalDisconnection)
         {
+            // ReSharper disable once ConvertIfStatementToConditionalTernaryExpression
             if (eventArgs.ClientWasConnected)
             {
                 Logger.LogWarning("MQTT disconnected: {ReasonMessage} ({Reason})", eventArgs.ReasonString, eventArgs.Reason);

@@ -1,6 +1,3 @@
-#nullable enable
-
-using System;
 using MQTTnet.Protocol;
 using Sholo.Mqtt.Topics.Filter;
 using Sholo.Mqtt.Topics.PatternMatcherFactory;
@@ -47,16 +44,6 @@ internal class MqttTopicFilterBuilder : IMqttTopicFilterBuilder
 
     public IMqttTopicFilter Build()
     {
-        if (TopicPattern == null)
-        {
-            throw new ArgumentNullException(nameof(TopicPattern), $"The {nameof(TopicPattern)} cannot be null");
-        }
-
-        if (TopicPattern.Length == 0)
-        {
-            throw new ArgumentException($"The {nameof(TopicPattern)} must be non-empty", nameof(TopicPattern));
-        }
-
         var topicPatternMatcher = new TopicPatternMatcherFactory()
             .CreateTopicPatternMatcher(TopicPattern!);
 

@@ -5,7 +5,7 @@ namespace Sholo.Mqtt.Application.BuilderConfiguration;
 
 internal class ConfigureMqttApplicationBuilder : IConfigureMqttApplicationBuilder
 {
-    private Action<IMqttApplicationBuilder> Configure { get; }
+    private Action<IMqttApplicationBuilder>? Configure { get; }
 
     public ConfigureMqttApplicationBuilder(Action<IMqttApplicationBuilder> configure)
     {

@@ -1,38 +1,40 @@
-#nullable enable
-
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
+using System.Diagnostics.CodeAnalysis;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Sholo.Mqtt.Utilities;
 
 [PublicAPI]
 internal static class ValidationHelper
 {
-    public static IEnumerable<ValidationResult> GetValidationResults(object obj)
+    private static IServiceProvider DefaultServiceProvider { get; }
+
+    static ValidationHelper()
     {
-        TryValidateObject(obj, out var results);
-        foreach (var result in results)
-        {
-            yield return result;
-        }
+        var serviceProvider = CreateServiceProvider(services => services.AddSingleton<IFileAbstraction, FileAbstraction>());
+        DefaultServiceProvider = serviceProvider;
     }
 
-    public static bool TryValidateObject(object obj, out ValidationResult[] results)
+    public static bool IsValid(object obj, [MaybeNullWhen(true)] out ValidationResult[] results)
     {
         ArgumentNullException.ThrowIfNull(obj);
 
         var validationResults = new List<ValidationResult>();
-        var success = ValidateObject(obj, validationResults);
+        var success = IsValid(obj, validationResults);
 
-        results = validationResults.ToArray();
+        results = success ? null : validationResults.ToArray();
         return success;
     }
 
-    public static bool ValidateObject(object obj, IList<ValidationResult> validationResults)
+    public static bool IsValid(object obj, IList<ValidationResult> validationResults, IFileAbstraction? fileAbstraction = null)
     {
-        var validationContext = new ValidationContext(obj);
+        var serviceProvider = fileAbstraction != null
+            ? CreateServiceProvider(services => services.AddSingleton(fileAbstraction))
+            : DefaultServiceProvider;
+
+        var validationContext = new ValidationContext(obj, serviceProvider, null);
 
         var success = Validator.TryValidateObject(
             obj,
@@ -41,28 +43,14 @@ internal static class ValidationHelper
             validateAllProperties: true
         );
 
-        /*
-        if (obj is IValidatableObject validatableObject)
-        {
-            ValidateValidatableObject(validationContext, validatableObject, validationResults);
-            success = validationResults.Count == 0;
-        }
-        */
-
         return success;
     }
 
-    private static void ValidateValidatableObject(ValidationContext validationContext, IValidatableObject validatableObject, IList<ValidationResult> validationResults)
+    private static IServiceProvider CreateServiceProvider(Action<IServiceCollection> config)
     {
-        var ungroupedResults = validatableObject.Validate(validationContext);
-
-        foreach (var result in ungroupedResults
-                     .GroupBy(x => string.Join(",", x.MemberNames?.OrderBy(y => y).ToArray() ?? Array.Empty<string>()))
-                     .Select(x => x.GroupBy(y => (y.MemberNames, y.ErrorMessage)).Select(y => y.Key))
-                     .SelectMany(x => x)
-                     .Select(x => new ValidationResult(x.ErrorMessage, x.MemberNames)))
-        {
-            validationResults.Add(result);
-        }
+        var serviceCollection = new ServiceCollection();
+        config.Invoke(serviceCollection);
+        var serviceProvider = serviceCollection.BuildServiceProvider();
+        return serviceProvider;
     }
 }

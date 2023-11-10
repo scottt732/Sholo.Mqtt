@@ -1,9 +1,8 @@
-#nullable enable
-
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using Microsoft.Extensions.DependencyInjection;
 using MQTTnet.Formatter;
 using Sholo.Mqtt.Utilities;
 
@@ -78,12 +77,12 @@ public class MqttSettings : IValidatableObject
     /// <summary>
     ///     Gets or sets an optional message to publish when the client connects or reconnects to the broker.
     /// </summary>
-    public MqttMessageSettings? OnlineMessage { get; set; } = new();
+    public MqttMessageSettings? OnlineMessage { get; set; }
 
     /// <summary>
     ///     Gets or sets an optional message that the broker will automatically publish if the client disconnects without sending a DISCONNECT packet.
     /// </summary>
-    public MqttMessageSettings? LastWillAndTestament { get; set; } = new();
+    public MqttMessageSettings? LastWillAndTestament { get; set; }
 
     /// <summary>
     ///     Gets or sets the timeout which will be applied at socket level and internal operations.
@@ -112,22 +111,38 @@ public class MqttSettings : IValidatableObject
                 new[] { nameof(ClientCertificatePublicKeyPemFile), nameof(ClientCertificatePrivateKeyPemFile) }
             );
         }
-
-        if (OnlineMessage != null)
+        else if (ClientCertificatePublicKeyPemFile != null && ClientCertificatePrivateKeyPemFile != null)
         {
-            ValidationHelper.TryValidateObject(OnlineMessage, out var validationResults);
+            var file = validationContext.GetRequiredService<IFileAbstraction>();
 
+            if (!file.Exists(ClientCertificatePublicKeyPemFile))
+            {
+                yield return new ValidationResult(
+                    "The public key file specified does not exist",
+                    new[] { nameof(ClientCertificatePublicKeyPemFile) }
+                );
+            }
+
+            if (!file.Exists(ClientCertificatePrivateKeyPemFile))
+            {
+                yield return new ValidationResult(
+                    "The private key file specified does not exist",
+                    new[] { nameof(ClientCertificatePrivateKeyPemFile) }
+                );
+            }
+        }
+
+        if (OnlineMessage != null && !ValidationHelper.IsValid(OnlineMessage, out var validationResults))
+        {
             foreach (var result in validationResults)
             {
                 yield return new ValidationResult(result.ErrorMessage, result.MemberNames.Select(m => $"{nameof(OnlineMessage)}.{m}").ToArray());
             }
         }
 
-        if (LastWillAndTestament != null)
+        if (LastWillAndTestament != null && !ValidationHelper.IsValid(LastWillAndTestament, out var validationResults1))
         {
-            ValidationHelper.TryValidateObject(LastWillAndTestament, out var validationResults);
-
-            foreach (var result in validationResults)
+            foreach (var result in validationResults1)
             {
                 yield return new ValidationResult(result.ErrorMessage, result.MemberNames.Select(m => $"{nameof(LastWillAndTestament)}.{m}").ToArray());
             }

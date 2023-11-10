@@ -2,6 +2,7 @@ using System;
 
 namespace Sholo.Mqtt.TypeConverters.Parameter;
 
+[PublicAPI]
 [AttributeUsage(AttributeTargets.Parameter)]
 public sealed class FromMqttTopicAttribute : Attribute
 {

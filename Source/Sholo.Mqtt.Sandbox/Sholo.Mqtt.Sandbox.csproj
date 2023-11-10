@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup Label="Package">
+    <Product>Sholo.Mqtt.Sandbox</Product>
+    <Description>Stuff that's not quite ready for prime-time</Description>
+    <PackageTags>mqtt</PackageTags>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Sholo.Mqtt</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Sholo.Mqtt\Sholo.Mqtt.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,6 +1,3 @@
-#nullable enable
-
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using Sholo.Mqtt.Topics.Filter;
@@ -14,7 +11,7 @@ internal class MqttApplication : IMqttApplication
 
     public MqttApplication(IEnumerable<IMqttTopicFilter> topicFilters, MqttRequestDelegate requestDelegate)
     {
-        TopicFilters = topicFilters?.ToArray() ?? Array.Empty<IMqttTopicFilter>();
+        TopicFilters = topicFilters.ToArray();
         RequestDelegate = requestDelegate;
     }
 }

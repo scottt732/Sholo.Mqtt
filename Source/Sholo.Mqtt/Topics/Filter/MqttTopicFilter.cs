@@ -8,6 +8,7 @@ namespace Sholo.Mqtt.Topics.Filter;
 public class MqttTopicFilter : IMqttTopicFilter
 {
     public string Topic => TopicPatternMatcher.Topic;
+    public string TopicPattern => TopicPatternMatcher.TopicPattern;
     public MqttQualityOfServiceLevel QualityOfServiceLevel { get; }
     public bool NoLocal { get; }
     public bool RetainAsPublished { get; }
@@ -15,7 +16,11 @@ public class MqttTopicFilter : IMqttTopicFilter
 
     private ITopicPatternMatcher TopicPatternMatcher { get; }
 
-    public bool IsMatch(IMqttRequestContext context, out IReadOnlyDictionary<string, string[]>? topicArguments) => TopicPatternMatcher.IsTopicMatch(context.Topic, out topicArguments);
+    public bool IsMatch(IMqttRequestContext context, out IReadOnlyDictionary<string, string[]>? topicArguments)
+    {
+        topicArguments = null;
+        return context.QualityOfServiceLevel == QualityOfServiceLevel && TopicPatternMatcher.IsTopicMatch(context.Topic, out topicArguments);
+    }
 
     public MqttTopicFilter(ITopicPatternMatcher topicPatternMatcher, MqttQualityOfServiceLevel qualityOfServiceLevel, bool noLocal, bool retainAsPublished, MqttRetainHandling retainHandling)
     {

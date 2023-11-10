@@ -1,7 +1,6 @@
-#nullable enable
-
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using Sholo.Mqtt.Topics.PatternMatcher;
@@ -17,8 +16,13 @@ internal class TopicPatternMatcherFactory : ITopicPatternMatcherFactory
         if (topicPattern == null) throw new ArgumentNullException(nameof(topicPattern), $"{nameof(topicPattern)} is required.");
         if (string.IsNullOrEmpty(topicPattern)) throw new ArgumentException($"{nameof(topicPattern)} must be non-empty.", nameof(topicPattern));
 
+        if (!topicPattern.Any(c => c is '+' or '#'))
+        {
+            return new SimpleTopicPatternMatcher(topicPattern);
+        }
+
         var topicParts = topicPattern.Split('/');
-        StringBuilder? regBuilder = null;
+        var regBuilder = new StringBuilder();
         string? mutliLevelWildcardVariableName = null;
 
         var topicParameterNames = new HashSet<string>();
@@ -39,7 +43,6 @@ internal class TopicPatternMatcherFactory : ITopicPatternMatcherFactory
                     );
                 }
 
-                regBuilder ??= new StringBuilder("^");
                 regBuilder.Append("(?<" + variableName + ">[^/]+)");
             }
             else if (topicPart.StartsWith('#'))
@@ -61,12 +64,10 @@ internal class TopicPatternMatcherFactory : ITopicPatternMatcherFactory
                     );
                 }
 
-                regBuilder ??= new StringBuilder("^");
                 regBuilder.Append("(?<" + mutliLevelWildcardVariableName + ">([^/]+/)*([^/]+))");
             }
             else
             {
-                regBuilder ??= new StringBuilder("^");
                 regBuilder.Append(topicPart);
             }
 
@@ -79,13 +80,10 @@ internal class TopicPatternMatcherFactory : ITopicPatternMatcherFactory
             regBuilder.Length -= 1;
         }
 
-        if (regBuilder != null)
-        {
-            regBuilder.Append('$');
-            var regex = new Regex(regBuilder.ToString(), RegexOptions.Compiled);
-            return new ComplexTopicPatternMatcher(topicPattern, regex, topicParameterNames, mutliLevelWildcardVariableName);
-        }
+        regBuilder.Append('$');
 
-        return new SimpleTopicPatternMatcher(topicPattern);
+        var regex = new Regex(regBuilder.ToString(), RegexOptions.Compiled);
+
+        return new ComplexTopicPatternMatcher(topicPattern, regex, topicParameterNames, mutliLevelWildcardVariableName);
     }
 }

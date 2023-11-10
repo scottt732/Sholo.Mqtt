@@ -31,6 +31,7 @@ public class MqttCorrelationDataValueProviderTests
 
         var correlationData = MqttCorrelationDataValueProvider.GetValueSource(MockParameterBindingContext.Object);
 
+        Assert.NotNull(correlationData);
         Assert.True(correlationData.SequenceEqual(TestCorrelationData));
     }
 

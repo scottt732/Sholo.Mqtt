@@ -3,6 +3,7 @@ using System.Text;
 
 namespace Sholo.Mqtt.TypeConverters;
 
+[PublicAPI]
 public abstract class BaseMqttRequestStringTypeConverter : IMqttRequestStringTypeConverter
 {
     private Encoding Encoding { get; }

@@ -1,5 +1,3 @@
-#nullable enable
-
 using System.Reflection;
 using System.Threading;
 using Sholo.Mqtt.ModelBinding.Context;

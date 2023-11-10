@@ -82,6 +82,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Sholo.Mqtt.Test", "Tests\Sh
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Sholo.Mqtt.TypeConverters.NewtonsoftJson", "Source\Sholo.Mqtt.TypeConverters.NewtonsoftJson\Sholo.Mqtt.TypeConverters.NewtonsoftJson.csproj", "{4BBB0538-3E45-4BC0-8115-7429A4DBE21C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sholo.Mqtt.Sandbox", "Source\Sholo.Mqtt.Sandbox\Sholo.Mqtt.Sandbox.csproj", "{8EF3B692-AE5C-4669-A918-FCF98E892AA5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -104,6 +106,10 @@ Global
 		{4BBB0538-3E45-4BC0-8115-7429A4DBE21C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4BBB0538-3E45-4BC0-8115-7429A4DBE21C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4BBB0538-3E45-4BC0-8115-7429A4DBE21C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8EF3B692-AE5C-4669-A918-FCF98E892AA5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8EF3B692-AE5C-4669-A918-FCF98E892AA5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8EF3B692-AE5C-4669-A918-FCF98E892AA5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8EF3B692-AE5C-4669-A918-FCF98E892AA5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -117,6 +123,7 @@ Global
 		{C447157E-3266-4C0B-928E-1D30FC436D66} = {719809C2-A551-4C4A-9EFD-B10FB5E35BC0}
 		{341D65E2-0B8B-4CAF-A3EA-4B58A385F74D} = {E1B24F25-B8A4-46EE-B7EB-7803DCFC543F}
 		{4BBB0538-3E45-4BC0-8115-7429A4DBE21C} = {719809C2-A551-4C4A-9EFD-B10FB5E35BC0}
+		{8EF3B692-AE5C-4669-A918-FCF98E892AA5} = {719809C2-A551-4C4A-9EFD-B10FB5E35BC0}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {73F36209-F8D6-4066-8951-D97729F773CF}

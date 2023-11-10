@@ -18,9 +18,31 @@ public class MqttMessageSettingsTests
             Retain = true
         };
 
-        ValidationHelper.TryValidateObject(mqttMessageSettings, out var validationResults);
+        var isValid = ValidationHelper.IsValid(mqttMessageSettings, out var validationResults);
 
-        Assert.Empty(validationResults);
+        Assert.True(isValid);
+        Assert.Null(validationResults);
+    }
+
+    [Fact]
+    public void Validate_WhenPayloadIsEmpty_ReturnsExpectedValidationErrors()
+    {
+        var mqttMessageSettings = new MqttMessageSettings
+        {
+            Topic = "this/is/a/test",
+            Payload = string.Empty,
+            QualityOfServiceLevel = MqttQualityOfServiceLevel.ExactlyOnce,
+            Retain = true
+        };
+
+        var isValid = ValidationHelper.IsValid(mqttMessageSettings, out var validationResults);
+
+        Assert.False(isValid);
+        Assert.NotNull(validationResults);
+        Assert.Collection(
+            validationResults,
+            validationResult => Assert.Equal("Payload can not be empty.", validationResult.ErrorMessage)
+        );
     }
 
     [Fact]
@@ -34,8 +56,10 @@ public class MqttMessageSettingsTests
             Retain = true
         };
 
-        ValidationHelper.TryValidateObject(mqttMessageSettings, out var validationResults);
+        var isValid = ValidationHelper.IsValid(mqttMessageSettings, out var validationResults);
 
+        Assert.False(isValid);
+        Assert.NotNull(validationResults);
         Assert.Collection(
             validationResults,
             validationResult => Assert.Equal("Topic is required.", validationResult.ErrorMessage)
@@ -53,8 +77,10 @@ public class MqttMessageSettingsTests
             Retain = true
         };
 
-        ValidationHelper.TryValidateObject(mqttMessageSettings, out var validationResults);
+        var isValid = ValidationHelper.IsValid(mqttMessageSettings, out var validationResults);
 
+        Assert.False(isValid);
+        Assert.NotNull(validationResults);
         Assert.Collection(
             validationResults,
             validationResult => Assert.Equal("Topic can not be empty.", validationResult.ErrorMessage)
@@ -74,8 +100,10 @@ public class MqttMessageSettingsTests
             Retain = true
         };
 
-        ValidationHelper.TryValidateObject(mqttMessageSettings, out var validationResults);
+        var isValid = ValidationHelper.IsValid(mqttMessageSettings, out var validationResults);
 
+        Assert.False(isValid);
+        Assert.NotNull(validationResults);
         Assert.Collection(
             validationResults,
             validationResult => Assert.Equal("The characters '+' and '#' are not allowed in topics.", validationResult.ErrorMessage)
@@ -93,8 +121,10 @@ public class MqttMessageSettingsTests
             Retain = true
         };
 
-        ValidationHelper.TryValidateObject(mqttMessageSettings, out var validationResults);
+        var isValid = ValidationHelper.IsValid(mqttMessageSettings, out var validationResults);
 
+        Assert.False(isValid);
+        Assert.NotNull(validationResults);
         Assert.Collection(
             validationResults,
             validationResult => Assert.Equal($"Invalid {nameof(mqttMessageSettings.QualityOfServiceLevel)} value: 1024", validationResult.ErrorMessage)
