@@ -1,6 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
-using Sholo.Mqtt.ModelBinding.Context;
 
 namespace Sholo.Mqtt;
 

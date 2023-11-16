@@ -1,7 +1,9 @@
 using System.Text;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Mqtt.Sample.Services;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Sholo.Mqtt;
@@ -35,6 +37,8 @@ public static class Program
                             ContractResolver = new CamelCasePropertyNamesContractResolver()
                         };
                     });
+
+                services.AddHostedService<FakeClientService>();
             })
             .ConfigureMqttHost(app =>
             {

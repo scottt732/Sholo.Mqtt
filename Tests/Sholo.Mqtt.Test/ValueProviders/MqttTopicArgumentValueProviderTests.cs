@@ -1,15 +1,17 @@
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
+using Microsoft.Extensions.Primitives;
 using Moq;
-using Sholo.Mqtt.ModelBinding.Context;
-using Sholo.Mqtt.ValueProviders;
+using Sholo.Mqtt.ModelBinding;
+using Sholo.Mqtt.ModelBinding.ValueProviders;
 using Xunit;
 
 namespace Sholo.Mqtt.Test.ValueProviders;
 
 public class MqttTopicArgumentValueProviderTests
 {
-    private Mock<IParameterBindingContext> MockParameterBindingContext { get; } = new(MockBehavior.Strict);
+    private Mock<IMqttModelBindingContext> MockModelBindingContext { get; } = new(MockBehavior.Strict);
 
     [Fact]
     public void GetValueSource_WhenTopicHasParameter_ReturnsValue()
@@ -18,14 +20,18 @@ public class MqttTopicArgumentValueProviderTests
 
         var expectedResults = new[] { "result" };
 
-        MockParameterBindingContext
+        MockModelBindingContext
             .SetupGet(x => x.TopicArguments)
-            .Returns(new Dictionary<string, string[]>
-            {
-                ["test"] = expectedResults
-            });
+            .Returns(
+                new ReadOnlyDictionary<string, StringValues>(
+                    new Dictionary<string, StringValues>
+                    {
+                        ["test"] = expectedResults
+                    }
+                )
+            );
 
-        var results = mqttTopicArgumentValueProvider.GetValueSource(MockParameterBindingContext.Object);
+        var results = mqttTopicArgumentValueProvider.GetValueSource(MockModelBindingContext.Object);
 
         Assert.NotNull(results);
         Assert.True(results.SequenceEqual(expectedResults));
@@ -36,11 +42,15 @@ public class MqttTopicArgumentValueProviderTests
     {
         var mqttTopicArgumentValueProvider = new MqttTopicArgumentValueProvider("test");
 
-        MockParameterBindingContext
+        MockModelBindingContext
             .SetupGet(x => x.TopicArguments)
-            .Returns(new Dictionary<string, string[]>());
+            .Returns(
+                new ReadOnlyDictionary<string, StringValues>(
+                    new Dictionary<string, StringValues>()
+                )
+            );
 
-        var result = mqttTopicArgumentValueProvider.GetValueSource(MockParameterBindingContext.Object);
+        var result = mqttTopicArgumentValueProvider.GetValueSource(MockModelBindingContext.Object);
 
         Assert.Equal(null, result);
     }

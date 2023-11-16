@@ -28,7 +28,6 @@
     <Folder Include="ModelBinding\Context\" />
     <Folder Include="Topics\FilterSanitizer\" />
     <Folder Include="TypeConverters\NewtonsoftJson\" />
-    <Folder Include="TypeConverters\Parameter\" />
     <Folder Include="TypeConverters\Payload\" />
   </ItemGroup>
 

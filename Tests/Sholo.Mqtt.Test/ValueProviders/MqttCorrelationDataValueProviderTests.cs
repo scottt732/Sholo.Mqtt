@@ -1,7 +1,6 @@
 using System.Linq;
 using Moq;
-using Sholo.Mqtt.ModelBinding.Context;
-using Sholo.Mqtt.ValueProviders;
+using Sholo.Mqtt.ModelBinding.ValueProviders;
 using Xunit;
 
 namespace Sholo.Mqtt.Test.ValueProviders;
@@ -9,7 +8,7 @@ namespace Sholo.Mqtt.Test.ValueProviders;
 public class MqttCorrelationDataValueProviderTests
 {
     private IMqttCorrelationDataValueProvider MqttCorrelationDataValueProvider { get; } = new MqttCorrelationDataValueProvider();
-    private Mock<IParameterBindingContext> MockParameterBindingContext { get; } = new(MockBehavior.Strict);
+    private Mock<IMqttModelBindingContext> MockParameterBindingContext { get; } = new(MockBehavior.Strict);
     private Mock<IMqttRequestContext> MockMqttRequestContext { get; } = new(MockBehavior.Strict);
 
     private static readonly byte[] TestCorrelationData = { 1, 2, 3 };

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using Microsoft.Extensions.Primitives;
 using MQTTnet.Protocol;
-using Sholo.Mqtt.ModelBinding.Context;
 using Sholo.Mqtt.Topics.PatternMatcher;
 
 namespace Sholo.Mqtt.Topics.Filter;
@@ -16,7 +17,7 @@ public class MqttTopicFilter : IMqttTopicFilter
 
     private ITopicPatternMatcher TopicPatternMatcher { get; }
 
-    public bool IsMatch(IMqttRequestContext context, out IReadOnlyDictionary<string, string[]>? topicArguments)
+    public bool IsMatch(IMqttRequestContext context, [MaybeNullWhen(false)] out IReadOnlyDictionary<string, StringValues> topicArguments)
     {
         topicArguments = null;
         return context.QualityOfServiceLevel == QualityOfServiceLevel && TopicPatternMatcher.IsTopicMatch(context.Topic, out topicArguments);

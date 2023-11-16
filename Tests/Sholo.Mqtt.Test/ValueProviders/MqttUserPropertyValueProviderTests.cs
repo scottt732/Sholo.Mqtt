@@ -1,15 +1,15 @@
 using System;
 using Moq;
 using MQTTnet.Packets;
-using Sholo.Mqtt.ModelBinding.Context;
-using Sholo.Mqtt.ValueProviders;
+using Sholo.Mqtt.ModelBinding;
+using Sholo.Mqtt.ModelBinding.ValueProviders;
 using Xunit;
 
 namespace Sholo.Mqtt.Test.ValueProviders;
 
 public class MqttUserPropertyValueProviderTests
 {
-    private Mock<IParameterBindingContext> MockParameterBindingContext { get; } = new(MockBehavior.Strict);
+    private Mock<IMqttModelBindingContext> MockModelBindingContext { get; } = new(MockBehavior.Strict);
     private Mock<IMqttRequestContext> MockMqttRequestContext { get; } = new(MockBehavior.Strict);
 
     private static readonly MqttUserProperty[] TestProperties = new[]
@@ -21,7 +21,7 @@ public class MqttUserPropertyValueProviderTests
 
     public MqttUserPropertyValueProviderTests()
     {
-        MockParameterBindingContext
+        MockModelBindingContext
             .SetupGet(x => x.Request)
             .Returns(MockMqttRequestContext.Object);
     }
@@ -34,11 +34,11 @@ public class MqttUserPropertyValueProviderTests
         var mqttUserPropertyValueProvider = new MqttUserPropertyValueProvider(propertyName, stringComparison);
 
         MockMqttRequestContext
-            .SetupGet(x => x.MqttUserProperties)
+            .SetupGet(x => x.UserProperties)
             .Returns(TestProperties)
             .Verifiable(Times.Once);
 
-        var values = mqttUserPropertyValueProvider.GetValueSource(MockParameterBindingContext.Object);
+        var values = mqttUserPropertyValueProvider.GetValueSource(MockModelBindingContext.Object);
 
         Assert.Collection(
             values,
@@ -54,11 +54,11 @@ public class MqttUserPropertyValueProviderTests
         var mqttUserPropertyValueProvider = new MqttUserPropertyValueProvider(propertyName, stringComparison);
 
         MockMqttRequestContext
-            .SetupGet(x => x.MqttUserProperties)
+            .SetupGet(x => x.UserProperties)
             .Returns(TestProperties)
             .Verifiable(Times.Once);
 
-        var values = mqttUserPropertyValueProvider.GetValueSource(MockParameterBindingContext.Object);
+        var values = mqttUserPropertyValueProvider.GetValueSource(MockModelBindingContext.Object);
 
         Assert.Collection(
             values,
@@ -75,11 +75,11 @@ public class MqttUserPropertyValueProviderTests
         var mqttUserPropertyValueProvider = new MqttUserPropertyValueProvider(propertyName, stringComparison);
 
         MockMqttRequestContext
-            .SetupGet(x => x.MqttUserProperties)
+            .SetupGet(x => x.UserProperties)
             .Returns(TestProperties)
             .Verifiable(Times.Once);
 
-        var values = mqttUserPropertyValueProvider.GetValueSource(MockParameterBindingContext.Object);
+        var values = mqttUserPropertyValueProvider.GetValueSource(MockModelBindingContext.Object);
 
         Assert.Empty(values);
     }

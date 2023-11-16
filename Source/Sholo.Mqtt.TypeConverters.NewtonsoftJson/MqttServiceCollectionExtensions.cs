@@ -3,6 +3,7 @@ using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Sholo.Mqtt.DependencyInjection;
+using Sholo.Mqtt.ModelBinding.TypeConverters;
 
 namespace Sholo.Mqtt.TypeConverters.NewtonsoftJson;
 
@@ -20,7 +21,7 @@ public static class MqttServiceCollectionExtensions
             .ValidateOnStart();
 
         services.TryAddSingleton<NewtonsoftJsonPayloadTypeConverter>();
-        services.TryAddSingleton<IMqttRequestPayloadTypeConverter>(sp => sp.GetRequiredService<NewtonsoftJsonPayloadTypeConverter>());
+        services.TryAddSingleton<IMqttPayloadTypeConverter>(sp => sp.GetRequiredService<NewtonsoftJsonPayloadTypeConverter>());
 
         return services;
     }

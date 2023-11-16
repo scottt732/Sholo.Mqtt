@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Microsoft.Extensions.Primitives;
 
 namespace Sholo.Mqtt.Topics.PatternMatcher;
 
@@ -45,5 +46,5 @@ public interface ITopicPatternMatcher
     ///     extracted from the <paramref name="topic" />
     /// </param>
     /// <returns>A boolean indicating whether or not the topic supplied matches the filter</returns>
-    bool IsTopicMatch(string topic, out IReadOnlyDictionary<string, string[]>? topicArguments);
+    bool IsTopicMatch(string topic, out IReadOnlyDictionary<string, StringValues>? topicArguments);
 }

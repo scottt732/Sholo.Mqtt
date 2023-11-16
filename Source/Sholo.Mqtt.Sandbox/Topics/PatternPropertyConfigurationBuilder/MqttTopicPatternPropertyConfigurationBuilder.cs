@@ -1,7 +1,7 @@
 using System;
 using System.Reflection;
+using Sholo.Mqtt.ModelBinding.TypeConverters;
 using Sholo.Mqtt.Topics.PatternPropertyConfiguration;
-using Sholo.Mqtt.TypeConverters;
 
 namespace Sholo.Mqtt.Topics.PatternPropertyConfigurationBuilder;
 

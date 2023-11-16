@@ -1,5 +1,6 @@
 using System;
 using Microsoft.Extensions.DependencyInjection;
+using Sholo.Mqtt.Middleware;
 
 namespace Sholo.Mqtt.Application.Builder;
 

@@ -1,5 +1,3 @@
-using Sholo.Mqtt.ModelBinding.Context;
-
 namespace Sholo.Mqtt.Controllers;
 
 [MqttController]

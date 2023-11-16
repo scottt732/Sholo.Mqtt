@@ -1,9 +1,14 @@
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using Microsoft.Extensions.Primitives;
 using MQTTnet.Protocol;
-using Sholo.Mqtt.ModelBinding.Context;
 
 namespace Sholo.Mqtt.Topics.Filter;
 
+/// <summary>
+///     A model which returns a parameterized and non-parameterized representation of the MQTT topic subscription. This model is
+///     used to match incoming messages and to extract arguments from the parameterized topic.
+/// </summary>
 [PublicAPI]
 public interface IMqttTopicFilter
 {
@@ -55,5 +60,5 @@ public interface IMqttTopicFilter
     ///     A true result does not guarantee that the message will be handled by an <see cref="Endpoint" />. It only indicates that the message is a
     ///     candidate for which binding should be attempted. See <see cref="RouteProvider" /> for the binding implementation &amp; behavior.
     /// </remarks>
-    bool IsMatch(IMqttRequestContext context, out IReadOnlyDictionary<string, string[]>? topicArguments);
+    bool IsMatch(IMqttRequestContext context, [MaybeNullWhen(false)] out IReadOnlyDictionary<string, StringValues> topicArguments);
 }

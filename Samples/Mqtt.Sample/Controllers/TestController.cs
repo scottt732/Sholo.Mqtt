@@ -15,7 +15,7 @@ public class TestController : MqttControllerBase
         Logger = logger;
     }
 
-    [Topic("run/+user/+count", "RunUser")]
+    [Topic("run/+user/+count")]
     public Task<bool> RunAsync(
         string user,
         int count,
@@ -26,7 +26,7 @@ public class TestController : MqttControllerBase
         return Task.FromResult(true);
     }
 
-    [Topic("run/+user/+count/2", "RunUser")]
+    [Topic("run/+user/+count/2")]
     public Task<bool> Run2Async(
         string user,
         int count,

@@ -11,7 +11,6 @@ using Microsoft.Extensions.Options;
 using MQTTnet.Client;
 using MQTTnet.Extensions.ManagedClient;
 using Sholo.Mqtt.Application.Provider;
-using Sholo.Mqtt.ModelBinding.Context;
 using Sholo.Mqtt.Settings;
 using Sholo.Mqtt.Topics.Filter;
 

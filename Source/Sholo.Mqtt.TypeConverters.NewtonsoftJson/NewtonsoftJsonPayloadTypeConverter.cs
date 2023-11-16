@@ -4,11 +4,12 @@ using System.Text;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
+using Sholo.Mqtt.ModelBinding.TypeConverters;
 using JsonSerializer = Newtonsoft.Json.JsonSerializer;
 
 namespace Sholo.Mqtt.TypeConverters.NewtonsoftJson;
 
-public class NewtonsoftJsonPayloadTypeConverter : IMqttRequestPayloadTypeConverter
+public class NewtonsoftJsonPayloadTypeConverter : IMqttPayloadTypeConverter
 {
     private ILogger Logger { get; }
     private Encoding Encoding { get; }

@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
+using Microsoft.Extensions.Primitives;
 using Moq;
 using MQTTnet.Protocol;
-using Sholo.Mqtt.ModelBinding.Context;
 using Sholo.Mqtt.Topics.Filter;
 using Sholo.Mqtt.Topics.PatternMatcher;
 using Sholo.Mqtt.Topics.PatternMatcherFactory;
@@ -52,7 +52,7 @@ public class MqttTopicFilterTests
         const string expectedTopicPattern = "testing/+testing/#onetwothree";
         const string expectedTopic = "testing/+/#";
 
-        var expectedTopicArguments = new Mock<IReadOnlyDictionary<string, string[]>>().Object;
+        var expectedTopicArguments = new Mock<IReadOnlyDictionary<string, StringValues>>().Object;
 
         var mockContext = new Mock<IMqttRequestContext>(MockBehavior.Strict);
 
@@ -112,7 +112,7 @@ public class MqttTopicFilterTests
         MqttQualityOfServiceLevel requestQualityOfServiceLevel
     )
     {
-        var expectedTopicArguments = new Mock<IReadOnlyDictionary<string, string[]>>().Object;
+        var expectedTopicArguments = new Mock<IReadOnlyDictionary<string, StringValues>>().Object;
 
         var mockContext = new Mock<IMqttRequestContext>(MockBehavior.Strict);
 

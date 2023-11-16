@@ -1,4 +1,3 @@
-using System;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,9 +11,8 @@ using Sholo.Mqtt.Application.Provider;
 using Sholo.Mqtt.Consumer;
 using Sholo.Mqtt.DependencyInjection;
 using Sholo.Mqtt.Internal;
+using Sholo.Mqtt.ModelBinding;
 using Sholo.Mqtt.Settings;
-using Sholo.Mqtt.TypeConverters;
-using Sholo.Mqtt.TypeConverters.Parameter;
 
 namespace Sholo.Mqtt;
 
@@ -111,6 +109,24 @@ public static class ServiceCollectionExtensions
         return new MqttServiceCollection(services, configSectionPath);
     }
 
+    public static IMqttServiceCollection AddMqttConsumerService<TMqttSettings>(this IServiceCollection services, string configSectionPath)
+        where TMqttSettings : ManagedMqttSettings, new()
+    {
+        services.TryAddSingleton<IMqttModelBinder, MqttModelBinder>();
+        services.TryAddSingleton<ITypeActivatorCache, TypeActivatorCache>();
+        services.TryAddSingleton<IControllerActivator, DefaultControllerActivator>();
+        services.TryAddSingleton<IRouteProvider, RouteProvider>();
+
+        services.TryAddSingleton<IMqttApplicationProvider, MqttApplicationProvider>();
+        services.AddManagedMqttServices<TMqttSettings>(configSectionPath);
+        services.AddHostedService<MqttConsumerService<TMqttSettings>>();
+
+        return new MqttServiceCollection(services, configSectionPath);
+    }
+
+    public static IMqttServiceCollection AddMqttConsumerService(this IServiceCollection services, string configSectionPath)
+        => services.AddMqttConsumerService<ManagedMqttSettings>(configSectionPath);
+
     public static IMqttServiceCollection AddManagedMqttServices<TMqttSettings>(this IServiceCollection services, string configSectionPath)
         where TMqttSettings : ManagedMqttSettings, new()
     {
@@ -175,53 +191,6 @@ public static class ServiceCollectionExtensions
         return new MqttServiceCollection(services, configSectionPath);
     }
 
-    public static IMqttServiceCollection AddMqttConsumerService<TMqttSettings>(
-        this IServiceCollection services,
-        string configSectionPath
-    )
-        where TMqttSettings : ManagedMqttSettings, new()
-    {
-        services.TryAddSingleton<ITypeActivatorCache, TypeActivatorCache>();
-        services.TryAddSingleton<IControllerActivator, DefaultControllerActivator>();
-        services.TryAddSingleton<IRouteProvider, RouteProvider>();
-
-        services.TryAddSingleton<IMqttApplicationProvider, MqttApplicationProvider>();
-        services.AddManagedMqttServices<TMqttSettings>(configSectionPath);
-        services.AddHostedService<MqttConsumerService<TMqttSettings>>();
-
-        return new MqttServiceCollection(services, configSectionPath);
-    }
-
-    public static IMqttServiceCollection AddMqttConsumerService(
-        this IServiceCollection services,
-        string configSectionPath
-    )
-        => services.AddMqttConsumerService<ManagedMqttSettings>(configSectionPath);
-
-    public static IServiceCollection AddMqttParameterTypeConverter<TTargetType>(
-        this IServiceCollection serviceCollection,
-        Func<string, TTargetType> converter
-    )
-    {
-        serviceCollection.AddSingleton(new LambdaMqttParameterTypeConverter<TTargetType>(converter));
-        return serviceCollection;
-    }
-
-    public static IServiceCollection AddMqttParameterTypeConverter<TTypeConverter>(
-        this IServiceCollection serviceCollection
-    )
-        where TTypeConverter : class, IMqttParameterTypeConverter
-    {
-        serviceCollection.AddSingleton<IMqttParameterTypeConverter, TTypeConverter>();
-        return serviceCollection;
-    }
-
-    public static IServiceCollection AddMqttParameterTypeConverter(
-        this IServiceCollection serviceCollection,
-        IMqttParameterTypeConverter converter
-    )
-    {
-        serviceCollection.AddSingleton(converter);
-        return serviceCollection;
-    }
+    public static IMqttServiceCollection AddManagedMqttServices(this IServiceCollection services, string configSectionPath)
+        => services.AddManagedMqttServices<ManagedMqttSettings>(configSectionPath);
 }

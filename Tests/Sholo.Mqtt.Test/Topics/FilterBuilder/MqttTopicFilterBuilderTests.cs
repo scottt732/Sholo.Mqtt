@@ -1,7 +1,6 @@
 using System;
 using Moq;
 using MQTTnet.Protocol;
-using Sholo.Mqtt.ModelBinding.Context;
 using Sholo.Mqtt.Topics.FilterBuilder;
 using Xunit;
 
@@ -52,7 +51,7 @@ public class MqttTopicFilterBuilderTests
         var ane = Assert.Throws<ArgumentNullException>(() => new MqttTopicFilterBuilder().Build());
 
         Assert.StartsWith("topicPattern is required", ane.Message, StringComparison.Ordinal);
-        Assert.Equal($"topicPattern", ane.ParamName);
+        Assert.Equal("topicPattern", ane.ParamName);
     }
 
     [Fact]

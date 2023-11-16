@@ -1,8 +1,7 @@
 using System;
 using System.Linq;
 using Moq;
-using Sholo.Mqtt.ModelBinding.Context;
-using Sholo.Mqtt.ValueProviders;
+using Sholo.Mqtt.ModelBinding.ValueProviders;
 using Xunit;
 
 namespace Sholo.Mqtt.Test.ValueProviders;
@@ -10,7 +9,7 @@ namespace Sholo.Mqtt.Test.ValueProviders;
 public class MqttPayloadValueProviderTests
 {
     private IMqttPayloadValueProvider MqttPayloadValueProvider { get; } = new MqttPayloadValueProvider();
-    private Mock<IParameterBindingContext> MockParameterBindingContext { get; } = new(MockBehavior.Strict);
+    private Mock<IMqttModelBindingContext> MockModelBindingContext { get; } = new(MockBehavior.Strict);
     private Mock<IMqttRequestContext> MockMqttRequestContext { get; } = new(MockBehavior.Strict);
 
     private static readonly ArraySegment<byte> TestPayload = new(
@@ -19,7 +18,7 @@ public class MqttPayloadValueProviderTests
 
     public MqttPayloadValueProviderTests()
     {
-        MockParameterBindingContext
+        MockModelBindingContext
             .SetupGet(x => x.Request)
             .Returns(MockMqttRequestContext.Object);
     }
@@ -32,7 +31,7 @@ public class MqttPayloadValueProviderTests
             .Returns(TestPayload)
             .Verifiable(Times.Once);
 
-        var payload = MqttPayloadValueProvider.GetValueSource(MockParameterBindingContext.Object);
+        var payload = MqttPayloadValueProvider.GetValueSource(MockModelBindingContext.Object);
 
         Assert.True(payload.SequenceEqual(TestPayload));
     }
@@ -45,7 +44,7 @@ public class MqttPayloadValueProviderTests
             .Returns(() => null!)
             .Verifiable(Times.Once);
 
-        var payload = MqttPayloadValueProvider.GetValueSource(MockParameterBindingContext.Object);
+        var payload = MqttPayloadValueProvider.GetValueSource(MockModelBindingContext.Object);
 
         Assert.Equal(0, payload.Count);
     }
