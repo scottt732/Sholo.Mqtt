@@ -1,8 +1,6 @@
-using System;
-using System.Linq;
-
 namespace Sholo.Mqtt.ModelBinding.ValueProviders;
 
+/*
 public class MqttUserPropertyValueProvider : IMqttUserPropertyValueProvider
 {
     public string PropertyName { get; }
@@ -22,3 +20,4 @@ public class MqttUserPropertyValueProvider : IMqttUserPropertyValueProvider
             .ToArray();
     }
 }
+*/

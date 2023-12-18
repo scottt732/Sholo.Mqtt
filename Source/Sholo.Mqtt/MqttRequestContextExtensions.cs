@@ -1,7 +1,6 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
 using MQTTnet;
 
 namespace Sholo.Mqtt;
@@ -51,11 +50,5 @@ public static class MqttRequestContextExtensions
         var message = builder.Build();
 
         return requestContext.RespondAsync(message, cancellationToken);
-    }
-
-    internal static Endpoint? GetEndpoint(this IMqttRequestContext context)
-    {
-        var routeProvider = context.ServiceProvider.GetRequiredService<IRouteProvider>();
-        return routeProvider.GetEndpoint(context);
     }
 }

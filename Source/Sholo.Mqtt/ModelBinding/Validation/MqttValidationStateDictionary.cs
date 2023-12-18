@@ -50,7 +50,6 @@ public class MqttValidationStateDictionary : IDictionary<object, MqttValidationS
     /// <param name="key">The key of the item to get</param>
     MqttValidationStateEntry IReadOnlyDictionary<object, MqttValidationStateEntry>.this[object key] => this[key]!;
 
-    /// <inheritdoc cref="IDictionary.Count" />
     public int Count => _inner.Count;
 
     /// <inheritdoc />

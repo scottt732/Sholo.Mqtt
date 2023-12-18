@@ -1,11 +1,13 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Primitives;
 using MQTTnet;
 using MQTTnet.Extensions.ManagedClient;
-using MQTTnet.Packets;
 using MQTTnet.Protocol;
+using Sholo.Mqtt.ModelBinding;
 
 namespace Sholo.Mqtt;
 
@@ -68,14 +70,14 @@ public interface IMqttRequestContext
     ///     Gets the user properties.
     ///     In MQTT 5, user properties are basic UTF-8 string key-value pairs that you can append to almost every type of MQTT
     ///     packet.
-    ///     As long as you don’t exceed the maximum message size, you can use an unlimited number of user properties to add
+    ///     As long as you don't exceed the maximum message size, you can use an unlimited number of user properties to add
     ///     metadata to MQTT messages and pass information between publisher, broker, and subscriber.
     ///     The feature is very similar to the HTTP header concept.
     /// </summary>
     /// <remarks>
     ///     MQTT 5 feature only.
     /// </remarks>
-    MqttUserProperty[] UserProperties { get; }
+    IReadOnlyDictionary<string, StringValues> UserProperties { get; }
 
     /// <summary>
     ///     Gets the content type.
@@ -175,6 +177,15 @@ public interface IMqttRequestContext
     ///     is called
     /// </summary>
     CancellationToken ShutdownToken { get; }
+
+    /// <summary>
+    ///     Gets or sets the <see cref="IMqttModelBindingResult" /> for the current request.
+    /// </summary>
+    /// <remarks>
+    ///     <see cref="IMqttModelBindingResult.Success" /> indicates that all action parameters were bound &amp; validated and that the
+    ///     action can be invoked
+    /// </remarks>
+    IMqttModelBindingResult? ModelBindingResult { get; set; }
 
     /// <summary>
     ///     Publishes a message using the connection on which this message was received

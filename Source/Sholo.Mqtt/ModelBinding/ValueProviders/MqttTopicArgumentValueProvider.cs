@@ -1,7 +1,6 @@
-using System.Reflection;
-
 namespace Sholo.Mqtt.ModelBinding.ValueProviders;
 
+/*
 public class MqttTopicArgumentValueProvider : IMqttTopicArgumentValueProvider
 {
     public string ParameterName { get; }
@@ -11,18 +10,14 @@ public class MqttTopicArgumentValueProvider : IMqttTopicArgumentValueProvider
         ParameterName = parameterName;
     }
 
-    public string[]? GetValueSource(IMqttModelBindingContext mqttModelBindingContext)
+    public MqttValueProviderResult GetValue(IMqttModelBindingContext mqttModelBindingContext, IMqttRequestContext requestContext, ParameterInfo actionParameter, out object? value)
     {
-        if (mqttModelBindingContext.TopicArguments.TryGetValue(ParameterName, out var values))
+        if (requestContext.TopicArguments.TryGetValue(ParameterName, out var values))
         {
             return values;
         }
 
         return null;
     }
-
-    public MqttValueProviderResult GetValue(IMqttModelBindingContext mqttModelBindingContext, ParameterInfo actionParameter, out object? value)
-    {
-        throw new System.NotImplementedException();
-    }
 }
+*/

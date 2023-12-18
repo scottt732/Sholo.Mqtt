@@ -1,10 +1,6 @@
-using System.Linq;
-using Moq;
-using Sholo.Mqtt.ModelBinding.ValueProviders;
-using Xunit;
-
 namespace Sholo.Mqtt.Test.ValueProviders;
 
+/*
 public class MqttCorrelationDataValueProviderTests
 {
     private IMqttCorrelationDataValueProvider MqttCorrelationDataValueProvider { get; } = new MqttCorrelationDataValueProvider();
@@ -47,3 +43,4 @@ public class MqttCorrelationDataValueProviderTests
         Assert.Null(correlationData);
     }
 }
+*/

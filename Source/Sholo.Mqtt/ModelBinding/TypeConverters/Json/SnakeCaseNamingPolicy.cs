@@ -33,7 +33,7 @@ public class SnakeCaseNamingPolicy : JsonNamingPolicy
     {
         var upperCaseCushionLength = name[1..].Count(t => t is >= 'A' and <= 'Z');
         var remainingLength = name.Length - upperCaseCushionLength;
-        var bufferSize = upperCaseCushionLength * 2 + remainingLength;
+        var bufferSize = (upperCaseCushionLength * 2) + remainingLength;
         var buffer = new char[bufferSize];
         var bufferPosition = 0;
 
@@ -70,7 +70,7 @@ public class SnakeCaseNamingPolicy : JsonNamingPolicy
                     var isPreviousLower = spanName[position - 1] > 96 && spanName[position - 1] < 123;
                     var isPreviousNumber = spanName[position - 1] > 47 && spanName[position - 1] < 58;
 
-                    if (isCurrentUpper && (isPreviousLower || isPreviousNumber || isNextLower || isNextSpace || isNextLower && !isPreviousSpace))
+                    if (isCurrentUpper && (isPreviousLower || isPreviousNumber || isNextLower || isNextSpace || (isNextLower && !isPreviousSpace)))
                     {
                         buffer[bufferPosition] = '_';
                         bufferPosition++;

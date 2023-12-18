@@ -7,23 +7,23 @@ using System.Threading.Tasks;
 namespace Sholo.Mqtt.Internal;
 
 /// <summary>
-/// <see cref="IControllerActivator"/> that uses type activation to create controllers.
+/// <see cref="IMqttControllerActivator"/> that uses type activation to create controllers.
 /// </summary>
-internal class DefaultControllerActivator : IControllerActivator
+internal class DefaultMqttControllerActivator : IMqttControllerActivator
 {
     private readonly ITypeActivatorCache _typeActivatorCache;
 
-    public DefaultControllerActivator(ITypeActivatorCache typeActivatorCache)
+    public DefaultMqttControllerActivator(ITypeActivatorCache typeActivatorCache)
     {
         _typeActivatorCache = typeActivatorCache ?? throw new ArgumentNullException(nameof(typeActivatorCache));
     }
 
     /// <inheritdoc />
-    public object Create(IMqttRequestContext controllerContext, Type controllerType)
+    public object Create(IMqttRequestContext requestContext, Type controllerType)
     {
-        ArgumentNullException.ThrowIfNull(controllerContext, nameof(controllerContext));
+        ArgumentNullException.ThrowIfNull(requestContext, nameof(requestContext));
 
-        var serviceProvider = controllerContext.ServiceProvider;
+        var serviceProvider = requestContext.ServiceProvider;
 
         return _typeActivatorCache.CreateInstance<object>(serviceProvider, controllerType);
     }

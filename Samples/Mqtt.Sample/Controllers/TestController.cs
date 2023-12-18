@@ -18,10 +18,10 @@ public class TestController : MqttControllerBase
     [Topic("run/+user/+count")]
     public Task<bool> RunAsync(
         string user,
-        int count,
+        float count,
         CancellationToken cancellationToken)
     {
-        Logger.LogInformation("Running {User}: {Count} {Payload}", user, count, Encoding.ASCII.GetString(Request.Payload));
+        Logger.LogInformation("Running {User}: {Count} {Payload}", user, count, Encoding.UTF8.GetString(Request.Payload));
         cancellationToken.ThrowIfCancellationRequested();
         return Task.FromResult(true);
     }

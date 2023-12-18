@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Sholo.Mqtt.Internal;
@@ -50,7 +49,7 @@ public class MqttApplicationBuilder : IMqttApplicationBuilder
 
         var routeProvider = ApplicationServices.GetRequiredService<IRouteProvider>();
 
-        var topicFilters = routeProvider.Endpoints.Select(x => x.TopicFilter);
+        var topicFilters = routeProvider.TopicFilters;
 
         return new MqttApplication(topicFilters, app);
     }

@@ -1,17 +1,12 @@
 using System;
 using Microsoft.Extensions.DependencyInjection;
-using Sholo.Mqtt.Middleware;
+using Sholo.Mqtt.Application.Builder;
 
-namespace Sholo.Mqtt.Application.Builder;
+namespace Sholo.Mqtt.Middleware;
 
 [PublicAPI]
 public static class MqttApplicationBuilderExtensions
 {
-    public static IMqttApplicationBuilder UseRouting(this IMqttApplicationBuilder mqttApplicationBuilder)
-    {
-        return mqttApplicationBuilder.UseMiddleware<RoutingMiddleware>();
-    }
-
     public static IMqttApplicationBuilder UseMiddleware<TMqttMiddleware>(this IMqttApplicationBuilder mqttApplicationBuilder)
         where TMqttMiddleware : IMqttMiddleware
     {

@@ -3,6 +3,8 @@ using System.Threading.Tasks;
 
 namespace Sholo.Mqtt;
 
+// TODO: CancellationToken
+
 /// <summary>
 /// A function that can process an MQTT request.
 /// </summary>

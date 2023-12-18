@@ -9,15 +9,15 @@ namespace Sholo.Mqtt.Internal;
 /// <summary>
 /// Provides methods to create a controller.
 /// </summary>
-public interface IControllerActivator
+public interface IMqttControllerActivator
 {
     /// <summary>
     /// Creates a controller.
     /// </summary>
-    /// <param name="context">The <see cref="IMqttRequestContext"/> for the executing action.</param>
+    /// <param name="requestContext">The <see cref="IMqttRequestContext"/> for the executing action.</param>
     /// <param name="controllerType">The controller type to create.</param>
     /// <returns>An instance of the controller type specified</returns>
-    object Create(IMqttRequestContext context, Type controllerType);
+    object Create(IMqttRequestContext requestContext, Type controllerType);
 
     /// <summary>
     /// Releases a controller.

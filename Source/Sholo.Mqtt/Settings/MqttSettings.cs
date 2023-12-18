@@ -77,12 +77,12 @@ public class MqttSettings : IValidatableObject
     /// <summary>
     ///     Gets or sets an optional message to publish when the client connects or reconnects to the broker.
     /// </summary>
-    public MqttMessageSettings? OnlineMessage { get; set; }
+    public MqttMessageSettings OnlineMessage { get; set; } = new();
 
     /// <summary>
     ///     Gets or sets an optional message that the broker will automatically publish if the client disconnects without sending a DISCONNECT packet.
     /// </summary>
-    public MqttMessageSettings? LastWillAndTestament { get; set; }
+    public MqttMessageSettings LastWillAndTestament { get; set; } = new();
 
     /// <summary>
     ///     Gets or sets the timeout which will be applied at socket level and internal operations.
@@ -94,6 +94,11 @@ public class MqttSettings : IValidatableObject
     ///     Gets or sets the maximum interval between MQTT control packets before the client will will automatically send a PINGREQ packet (default = 30s).
     /// </summary>
     public TimeSpan? KeepAliveInterval { get; set; }
+
+    /// <summary>
+    ///     Gets or sets whether a clean session is used. This determines whether the broker will store and attempt delivery by  session persistence and QoS messages
+    /// </summary>
+    public bool? CleanSession { get; set; }
 
     public virtual IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {

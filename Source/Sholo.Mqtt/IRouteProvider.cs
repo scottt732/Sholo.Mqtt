@@ -1,8 +1,10 @@
+using Sholo.Mqtt.Topics.Filter;
+
 namespace Sholo.Mqtt;
 
 public interface IRouteProvider
 {
-    Endpoint[] Endpoints { get; }
+    IMqttTopicFilter[] TopicFilters { get; }
 
-    Endpoint? GetEndpoint(IMqttRequestContext context);
+    Endpoint? GetEndpoint(IMqttRequestContext requestContext);
 }

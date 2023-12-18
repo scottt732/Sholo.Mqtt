@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Linq;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,6 +14,8 @@ using Sholo.Mqtt.Consumer;
 using Sholo.Mqtt.DependencyInjection;
 using Sholo.Mqtt.Internal;
 using Sholo.Mqtt.ModelBinding;
+using Sholo.Mqtt.ModelBinding.BindingProviders;
+using Sholo.Mqtt.Routing;
 using Sholo.Mqtt.Settings;
 
 namespace Sholo.Mqtt;
@@ -33,7 +37,8 @@ public static class ServiceCollectionExtensions
 
             var mqttClientOptionsBuilder = new MqttClientOptionsBuilder()
                 .WithTcpServer(mqttSettings.Host, mqttSettings.Port)
-                .WithProtocolVersion(mqttSettings.MqttProtocolVersion ?? MqttProtocolVersion.V500);
+                .WithProtocolVersion(mqttSettings.MqttProtocolVersion ?? MqttProtocolVersion.V500)
+                .WithCleanSession(mqttSettings.CleanSession ?? true);
 
             if (mqttSettings.UseTls)
             {
@@ -112,9 +117,21 @@ public static class ServiceCollectionExtensions
     public static IMqttServiceCollection AddMqttConsumerService<TMqttSettings>(this IServiceCollection services, string configSectionPath)
         where TMqttSettings : ManagedMqttSettings, new()
     {
+        services.AddSingleton<IMqttParameterBinder, MqttRequestContextParameterBinder>();
+        services.AddSingleton<IMqttParameterBinder, MqttCancellationTokenParameterBinder>();
+        services.AddSingleton<IMqttParameterBinder, MqttServiceProviderParameterBinder>();
+        services.AddSingleton<IMqttParameterBinder, MqttTopicFilterParameterBinder>();
+        services.AddSingleton<IMqttParameterBinder, MqttTopicParameterBinder>();
+        services.AddSingleton<IMqttParameterBinder, MqttCorrelationDataParameterBinder>();
+        services.AddSingleton<IMqttParameterBinder, MqttPayloadParameterBinder>();
+        services.AddSingleton<IMqttParameterBinder, MqttAttributeParameterBinder>();
+        services.AddSingleton<IMqttParameterBinder, MqttTopicArgumentParameterBinder>();
+        services.AddSingleton(sp => sp.GetRequiredService<IEnumerable<IMqttParameterBinder>>().ToArray());
+
         services.TryAddSingleton<IMqttModelBinder, MqttModelBinder>();
+
         services.TryAddSingleton<ITypeActivatorCache, TypeActivatorCache>();
-        services.TryAddSingleton<IControllerActivator, DefaultControllerActivator>();
+        services.TryAddSingleton<IMqttControllerActivator, DefaultMqttControllerActivator>();
         services.TryAddSingleton<IRouteProvider, RouteProvider>();
 
         services.TryAddSingleton<IMqttApplicationProvider, MqttApplicationProvider>();

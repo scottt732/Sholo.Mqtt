@@ -11,7 +11,7 @@ public interface IMqttModelBindingContext
 
     // Parameters binding
     IReadOnlyDictionary<string, string[]> TopicArguments { get; }
-    IMqttParameterTypeConverter[] ParameterTypeConverters { get; }
+    IMqttUserPropertiesTypeConverter[] ParameterTypeConverters { get; }
 
     // Correlation Data
     IMqttCorrelationDataTypeConverter CorrelationDataTypeConverter { get; }
@@ -19,6 +19,6 @@ public interface IMqttModelBindingContext
     // Payload binding
     IMqttPayloadTypeConverter PayloadTypeConverter { get; }
 
-    bool TryConvertParameter(string? input, IMqttParameterTypeConverter? explicitParameterTypeConverter, ParameterInfo actionParameter, Type targetType, out object? result);
+    bool TryConvertUserProperties(string? input, IMqttUserPropertiesTypeConverter? explicitParameterTypeConverter, ParameterInfo actionParameter, Type targetType, out object? result);
 }
 */

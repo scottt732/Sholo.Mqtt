@@ -20,8 +20,11 @@ public class JsonTypeConverter : IMqttPayloadTypeConverter, IMqttCorrelationData
         Logger = logger;
     }
 
-    public bool TryConvertPayload(ArraySegment<byte> payloadData, Type targetType, out object? result)
-        => TryConvert(payloadData, targetType, out result);
+    public bool TryConvertPayload(ArraySegment<byte> payload, Type targetType, out object? result)
+        => TryConvert(payload, targetType, out result);
+
+    public bool TryConvertCorrelationData(byte[]? correlationData, Type targetType, out object? result)
+        => TryConvert(correlationData, targetType, out result);
 
     public bool TryConvert(byte[]? input, Type targetType, out object? result)
     {

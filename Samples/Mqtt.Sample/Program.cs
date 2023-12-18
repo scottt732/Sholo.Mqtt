@@ -6,9 +6,8 @@ using Microsoft.Extensions.Logging;
 using Mqtt.Sample.Services;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
-using Sholo.Mqtt;
-using Sholo.Mqtt.Application.Builder;
 using Sholo.Mqtt.Hosting;
+using Sholo.Mqtt.Routing;
 using Sholo.Mqtt.TypeConverters.NewtonsoftJson;
 
 namespace Mqtt.Sample;
@@ -38,7 +37,7 @@ public static class Program
                         };
                     });
 
-                services.AddHostedService<FakeClientService>();
+                services.AddHostedService<ClientService>();
             })
             .ConfigureMqttHost(app =>
             {

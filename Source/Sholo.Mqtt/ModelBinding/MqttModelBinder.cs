@@ -1,131 +1,180 @@
-using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using System.Reflection;
-using System.Threading;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Sholo.Mqtt.ModelBinding.TypeConverters;
-using Sholo.Mqtt.ModelBinding.TypeConverters.Attributes;
-using Sholo.Mqtt.Topics.Filter;
-using Sholo.Mqtt.Utilities;
+using Microsoft.Extensions.Primitives;
+using Sholo.Mqtt.ModelBinding.BindingProviders;
 
 namespace Sholo.Mqtt.ModelBinding;
 
 public class MqttModelBinder : IMqttModelBinder
 {
-    public MqttModelBinder()
+    private IMqttParameterBinder[] ParameterBinders { get; }
+
+    public MqttModelBinder(IMqttParameterBinder[] parameterBinders)
     {
+        ParameterBinders = parameterBinders;
     }
 
-    public bool TryPerformModelBinding(
+    public void TryPerformModelBinding(IMqttModelBindingContext modelBindingContext, IMqttRequestContext requestContext, IReadOnlyDictionary<string, StringValues> topicArguments)
+    {
+        var parameters = modelBindingContext.Action
+            .GetParameters()
+            .ToDictionary(
+                x => x,
+                x => new ParameterState(modelBindingContext, x)
+            );
+
+        var allParametersSet = true;
+        foreach (var (_, parameterState) in parameters)
+        {
+            if (!TryBind(modelBindingContext, requestContext, topicArguments, parameterState))
+            {
+                allParametersSet = false;
+            }
+        }
+
+        if (allParametersSet)
+        {
+            foreach (var (_, parameterState) in parameters)
+            {
+                if (parameterState is { IsModelSet: true, ValidationStatus: not ParameterValidationResult.ValidationSuppressed })
+                {
+                    parameterState.TryValidate();
+                }
+            }
+        }
+
+        requestContext.ModelBindingResult = new MqttModelBindingResult(modelBindingContext, parameters);
+    }
+
+    public bool TryBind(
+        IMqttModelBindingContext modelBindingContext,
         IMqttRequestContext requestContext,
-        IMqttTopicFilter topicPatternFilter,
-        MethodInfo action,
-        [MaybeNullWhen(false)] out IDictionary<ParameterInfo, object?> actionArguments)
+        IReadOnlyDictionary<string, StringValues> topicArguments,
+        ParameterState parameterState
+    )
     {
-        var logger = requestContext.ServiceProvider.GetService<ILogger<RouteProvider>>();
-
-        // See if the request message's topic matches the pattern & extract arguments
-        if (!topicPatternFilter.IsMatch(requestContext, out var topicArguments))
+        foreach (var parameterBinder in ParameterBinders)
         {
-            actionArguments = null;
-            return false;
+            if (parameterBinder.TryBind(modelBindingContext, requestContext, topicArguments, parameterState, out var parameterBindingResult))
+            {
+                parameterState.SetBindingSuccess(parameterBindingResult.BindingSource, parameterBindingResult.Value, parameterBindingResult.BypassValidation);
+                return true;
+            }
         }
 
-        var actionParameters = action.GetParameters();
-
-        var modelBindingContext = new MqttModelBindingContext(
-            action,
-            topicPatternFilter.TopicPattern,
-            requestContext,
-            topicArguments!,
-            logger
-        );
-
-        // Attempt to bind the topic arguments, services, etc. to the action/method parameters
-        if (!TryBindActionParameters(modelBindingContext, out actionArguments))
-        {
-            return false;
-        }
-
-        // Handle the case where we couldn't match 100% of the action arguments to parameters
-        if (actionArguments.Count != actionParameters.Length)
-        {
-            var unmatchedParameters = string.Join(", ", actionArguments.Keys.Except(actionParameters).Select(x => x.Name));
-
-            logger?.LogDebug(
-                "Evaluating candidate handler {TopicPattern}: Failed to bind the following parameters: {UnmatchedParameters}",
-                topicPatternFilter.TopicPattern,
-                unmatchedParameters
-            );
-            return false;
-        }
-
-        logger?.LogDebug(
-            "Executing {TopicPattern}",
-            topicPatternFilter.TopicPattern
-        );
-
-        return true;
+        parameterState.SetBindingFailure();
+        return false;
     }
 
-    [ExcludeFromCodeCoverage]
-    private bool TryBindActionParameters(IMqttModelBindingContext mqttModelBindingContext, out IDictionary<ParameterInfo, object?> actionArguments)
+    /*
+    public bool TryBindParameters(IMqttUserPropertiesTypeConverter? explicitParameterTypeConverter, ParameterInfo actionParameter, Type targetType, out object? result)
     {
-        actionArguments = new Dictionary<ParameterInfo, object?>();
-
-        ParameterInfo? unboundParameter = null;
-        var actionParameters = mqttModelBindingContext.Action.GetParameters();
-
-        foreach (var actionParameter in actionParameters)
+        if (input == null)
         {
-            if (TryBindCancellationToken(mqttModelBindingContext, actionArguments, actionParameter) ||
-                TryBindParameter(mqttModelBindingContext, actionArguments, actionParameter) ||
-                TryBindCorrelationData(mqttModelBindingContext, actionArguments, actionParameter) ||
-                TryBindUserProperty(mqttModelBindingContext, actionArguments, actionParameter) ||
-                TryBindService(mqttModelBindingContext, actionArguments, actionParameter))
+            if (actionParameter.ParameterType.IsClass)
             {
-                continue;
+                result = default;
+                return true;
             }
 
-            if (unboundParameter != null)
+            if (actionParameter.ParameterType.IsValueType && Nullable.GetUnderlyingType(actionParameter.ParameterType) != null)
             {
-                // There can only be 1 unmatched parameter (the one that might be the payload)
-                return false;
+                result = null;
+                return true;
             }
 
-            // Need to hold the slot. We'll supply the value below.
-            actionArguments.Add(actionParameter, null);
-            unboundParameter = actionParameter;
-        }
-
-        if (unboundParameter == null)
-        {
-            mqttModelBindingContext.Logger?.LogWarning("No remaining parameters available for payload binding");
+            result = null;
             return false;
         }
 
-        var payloadParameter = unboundParameter;
-        if (!TryBindPayload(mqttModelBindingContext, payloadParameter, out var payload))
+        if (explicitParameterTypeConverter != null)
         {
-            mqttModelBindingContext.Logger?.LogWarning("Failed to bind payload");
+            if (explicitParameterTypeConverter.TryConvertUserProperties(input, targetType, out result))
+            {
+                return true;
+            }
+            else
+            {
+                throw new InvalidOperationException(
+                    $"The converter {explicitParameterTypeConverter.GetType().Name} cannot convert parameters of type {actionParameter.ParameterType.Name}");
+            }
+        }
+
+        foreach (var converter in ParameterTypeConverters)
+        {
+            if (converter.TryConvertUserProperties(input, targetType, out result))
+            {
+                return true;
+            }
+        }
+
+        if (DefaultTypeConverter.TryConvert(input, actionParameter.ParameterType, out result))
+        {
+            return true;
+        }
+
+        result = default;
+        return false;
+    }
+    */
+
+    /*
+
+[ExcludeFromCodeCoverage]
+private bool TryBindActionParameters(IMqttModelBindingContext mqttModelBindingContext, out IDictionary<ParameterInfo, object?> actionArguments)
+{
+    actionArguments = new Dictionary<ParameterInfo, object?>();
+
+    ParameterInfo? unboundParameter = null;
+    var actionParameters = mqttModelBindingContext.Action.GetParameters();
+
+    foreach (var actionParameter in actionParameters)
+    {
+        if (TryBindCancellationToken(mqttModelBindingContext, actionArguments, actionParameter) ||
+            TryBindParameter(mqttModelBindingContext, actionArguments, actionParameter) ||
+            TryBindCorrelationData(mqttModelBindingContext, actionArguments, actionParameter) ||
+            TryBindUserProperty(mqttModelBindingContext, actionArguments, actionParameter) ||
+            TryBindService(mqttModelBindingContext, actionArguments, actionParameter))
+        {
+            continue;
+        }
+
+        if (unboundParameter != null)
+        {
+            // There can only be 1 unmatched parameter (the one that might be the payload)
             return false;
         }
 
-        if (!ValidationHelper.IsValid(payload!, out var validationResults))
-        {
-            mqttModelBindingContext.Logger?.LogWarning(
-                "The message payload failed validation:{NewLine}{ValidationErrors}",
-                Environment.NewLine,
-                string.Join(Environment.NewLine, validationResults.Select(x => $"{x.ErrorMessage} ({string.Join(", ", x.MemberNames)})"))
-            );
-            return false;
-        }
+        // Need to hold the slot. We'll supply the value below.
+        actionArguments.Add(actionParameter, null);
+        unboundParameter = actionParameter;
+    }
 
-        actionArguments[payloadParameter] = payload;
-        return true;
+    if (unboundParameter == null)
+    {
+        mqttModelBindingContext.Logger?.LogWarning("No remaining parameters available for payload binding");
+        return false;
+    }
+
+    var payloadParameter = unboundParameter;
+    if (!TryBindPayload(mqttModelBindingContext, payloadParameter, out var payload))
+    {
+        mqttModelBindingContext.Logger?.LogWarning("Failed to bind payload");
+        return false;
+    }
+
+    if (!ValidationHelper.IsValid(payload!, out var validationResults))
+    {
+        mqttModelBindingContext.Logger?.LogWarning(
+            "The message payload failed validation:{NewLine}{ValidationErrors}",
+            Environment.NewLine,
+            string.Join(Environment.NewLine, validationResults.Select(x => $"{x.ErrorMessage} ({string.Join(", ", x.MemberNames)})"))
+        );
+        return false;
+    }
+
+    actionArguments[payloadParameter] = payload;
+    return true;
     }
 
     [ExcludeFromCodeCoverage]
@@ -145,7 +194,7 @@ public class MqttModelBinder : IMqttModelBinder
     [ExcludeFromCodeCoverage]
     private bool TryBindParameter(IMqttModelBindingContext mqttModelBindingContext, IDictionary<ParameterInfo, object?> actionArguments, ParameterInfo actionParameter)
     {
-        var explicitTypeConverter = CreateRequestedTypeConverter<FromMqttTopicAttribute, IMqttParameterTypeConverter>(
+        var explicitTypeConverter = CreateRequestedTypeConverter<FromMqttTopicAttribute, IMqttUserPropertiesTypeConverter>(
             mqttModelBindingContext,
             actionParameter,
             a => a.TypeConverterType);
@@ -168,7 +217,7 @@ public class MqttModelBinder : IMqttModelBinder
             var array = Array.CreateInstance(elementType, argumentValueStrings.Length);
             for (var i = 0; i < argumentValueStrings.Length; i++)
             {
-                if (!mqttModelBindingContext.TryConvertParameter(argumentValueStrings[i], explicitTypeConverter, actionParameter, elementType, out var typedArgumentValue))
+                if (!mqttModelBindingContext.TryConvertUserProperties(argumentValueStrings[i], explicitTypeConverter, actionParameter, elementType, out var typedArgumentValue))
                 {
                     mqttModelBindingContext.Logger?.LogWarning(
                         "Unable to convert parameter {ParameterName} value to {ParameterType}",
@@ -186,7 +235,7 @@ public class MqttModelBinder : IMqttModelBinder
             return true;
         }
 
-        if (mqttModelBindingContext.TryConvertParameter(argumentValueStrings.Single(), explicitTypeConverter, actionParameter, actionParameterParameterType, out var argumentValue))
+        if (mqttModelBindingContext.TryConvertUserProperties(argumentValueStrings.Single(), explicitTypeConverter, actionParameter, actionParameterParameterType, out var argumentValue))
         {
             actionArguments[actionParameter] = argumentValue;
             return true;
@@ -200,107 +249,5 @@ public class MqttModelBinder : IMqttModelBinder
 
         return false;
     }
-
-    [ExcludeFromCodeCoverage]
-    private bool TryBindCorrelationData(IMqttModelBindingContext mqttModelBindingContext, IDictionary<ParameterInfo, object?> actionArguments, ParameterInfo actionParameter)
-    {
-        var parameterType = actionParameter.ParameterType;
-
-        var explicitTypeConverter = CreateRequestedTypeConverter<FromMqttPayloadAttribute, IMqttPayloadTypeConverter>(
-            mqttModelBindingContext,
-            actionParameter,
-            a => a.TypeConverterType);
-
-        var correlationData = new ArraySegment<byte>(mqttModelBindingContext.Request.CorrelationData ?? Array.Empty<byte>());
-
-        if (explicitTypeConverter != null && explicitTypeConverter.TryConvertPayload(correlationData, parameterType, out var correlationDataResult))
-        {
-            actionArguments[actionParameter] = correlationDataResult;
-            return true;
-        }
-
-        if (DefaultTypeConverters.TryConvert(correlationData, parameterType, out correlationDataResult))
-        {
-            actionArguments[actionParameter] = correlationDataResult;
-            return true;
-        }
-
-        if (mqttModelBindingContext.CorrelationDataTypeConverter.TryConvertCorrelationData(mqttModelBindingContext.Request.CorrelationData, parameterType, out correlationDataResult))
-        {
-            actionArguments[actionParameter] = correlationDataResult;
-            return true;
-        }
-
-        actionArguments[actionParameter] = null!;
-        return false;
-    }
-
-    // ReSharper disable once UnusedParameter.Local
-    [ExcludeFromCodeCoverage]
-    private bool TryBindUserProperty(IMqttModelBindingContext mqttModelBindingContext, IDictionary<ParameterInfo, object?> actionArguments, ParameterInfo actionParameter)
-    {
-        return false;
-    }
-
-    [ExcludeFromCodeCoverage]
-    private bool TryBindService(IMqttModelBindingContext mqttModelBindingContext, IDictionary<ParameterInfo, object?> actionArguments, ParameterInfo actionParameter)
-    {
-        var parameterType = actionParameter.ParameterType;
-        if (parameterType.IsEnum ||
-            parameterType.IsPrimitive ||
-            parameterType == typeof(string) ||
-            Nullable.GetUnderlyingType(parameterType) != null)
-        {
-            return false;
-        }
-
-        var argumentValues = mqttModelBindingContext.Request.ServiceProvider
-            .GetServices(parameterType)
-            .ToArray();
-
-        if (argumentValues.Length == 0) return false;
-
-        var argumentValue = argumentValues.Last();
-        actionArguments[actionParameter] = argumentValue;
-
-        return true;
-    }
-
-    [ExcludeFromCodeCoverage]
-    private bool TryBindPayload(IMqttModelBindingContext mqttModelBindingContext, ParameterInfo? payloadParameter, out object? payload)
-    {
-        if (payloadParameter == null)
-        {
-            payload = null;
-            return false;
-        }
-
-        var parameterType = payloadParameter.ParameterType;
-
-        var explicitTypeConverter = CreateRequestedTypeConverter<FromMqttPayloadAttribute, IMqttPayloadTypeConverter>(
-            mqttModelBindingContext,
-            payloadParameter,
-            a => a.TypeConverterType);
-
-        if (explicitTypeConverter != null && explicitTypeConverter.TryConvertPayload(mqttModelBindingContext.Request.Payload, parameterType, out var payloadResult))
-        {
-            payload = payloadResult;
-            return true;
-        }
-
-        if (DefaultTypeConverters.TryConvert(mqttModelBindingContext.Request.Payload, parameterType, out payloadResult))
-        {
-            payload = payloadResult;
-            return true;
-        }
-
-        if (mqttModelBindingContext.PayloadTypeConverter.TryConvertPayload(mqttModelBindingContext.Request.Payload, parameterType, out payloadResult))
-        {
-            payload = payloadResult;
-            return true;
-        }
-
-        payload = null!;
-        return false;
-    }
+    */
 }

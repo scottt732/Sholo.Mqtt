@@ -4,22 +4,39 @@ namespace Sholo.Mqtt.ModelBinding.TypeConverters.Attributes;
 
 [PublicAPI]
 [AttributeUsage(AttributeTargets.Parameter)]
-public sealed class FromMqttCorrelationDataAttribute : Attribute
+public sealed class FromMqttCorrelationDataAttribute : BaseFromMqttConverterAttribute<IMqttCorrelationDataTypeConverter, DefaultTypeConverter>
 {
-    public Type TypeConverterType { get; }
-
-    public FromMqttCorrelationDataAttribute(Type typeConverterType)
+    public FromMqttCorrelationDataAttribute()
+        : base(MqttBindingSource.CorrelationData)
     {
-        ArgumentNullException.ThrowIfNull(typeConverterType, nameof(typeConverterType));
+    }
 
-        if (!typeof(IMqttCorrelationDataTypeConverter).IsAssignableFrom(typeConverterType))
-        {
-            throw new ArgumentException(
-                $"The type {typeConverterType.Name} does not implement {nameof(IMqttCorrelationDataTypeConverter)}",
-                nameof(typeConverterType)
-            );
-        }
+    protected override bool TryConvert(IMqttRequestContext requestContext, ParameterState parameterState, IMqttCorrelationDataTypeConverter typeConverter, out object? result)
+    {
+        return typeConverter.TryConvertCorrelationData(
+            requestContext.CorrelationData,
+            parameterState.ParameterInfo.ParameterType,
+            out result
+        );
+    }
+}
 
-        TypeConverterType = typeConverterType;
+[PublicAPI]
+[AttributeUsage(AttributeTargets.Parameter)]
+public sealed class FromMqttCorrelationDataAttribute<TMqttCorrelationDataTypeConverter> : BaseFromMqttConverterAttribute<IMqttCorrelationDataTypeConverter, TMqttCorrelationDataTypeConverter>
+    where TMqttCorrelationDataTypeConverter : class, IMqttCorrelationDataTypeConverter
+{
+    public FromMqttCorrelationDataAttribute()
+        : base(MqttBindingSource.CorrelationData)
+    {
+    }
+
+    protected override bool TryConvert(IMqttRequestContext requestContext, ParameterState parameterState, IMqttCorrelationDataTypeConverter typeConverter, out object? result)
+    {
+        return typeConverter.TryConvertCorrelationData(
+            requestContext.CorrelationData,
+            parameterState.ParameterInfo.ParameterType,
+            out result
+        );
     }
 }

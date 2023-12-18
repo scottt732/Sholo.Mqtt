@@ -1,7 +1,6 @@
-using System.Reflection;
-
 namespace Sholo.Mqtt.ModelBinding.ValueProviders;
 
+/*
 [PublicAPI]
 public class CancellationTokenModelBinder : IMqttModelBinder
 {
@@ -10,3 +9,4 @@ public class CancellationTokenModelBinder : IMqttModelBinder
         return new MqttValueProviderResult(mqttModelBindingContext.Request.ShutdownToken);
     }
 }
+*/

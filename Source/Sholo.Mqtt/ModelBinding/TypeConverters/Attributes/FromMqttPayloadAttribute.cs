@@ -4,22 +4,39 @@ namespace Sholo.Mqtt.ModelBinding.TypeConverters.Attributes;
 
 [PublicAPI]
 [AttributeUsage(AttributeTargets.Parameter)]
-public sealed class FromMqttPayloadAttribute : Attribute
+public sealed class FromMqttPayloadAttribute : BaseFromMqttConverterAttribute<IMqttPayloadTypeConverter, DefaultTypeConverter>
 {
-    public Type TypeConverterType { get; }
-
-    public FromMqttPayloadAttribute(Type typeConverterType)
+    public FromMqttPayloadAttribute()
+        : base(MqttBindingSource.Payload)
     {
-        ArgumentNullException.ThrowIfNull(typeConverterType, nameof(typeConverterType));
+    }
 
-        if (!typeof(IMqttPayloadTypeConverter).IsAssignableFrom(typeConverterType))
-        {
-            throw new ArgumentException(
-                $"The type {typeConverterType.Name} does not implement {nameof(IMqttPayloadTypeConverter)}",
-                nameof(typeConverterType)
-            );
-        }
+    protected override bool TryConvert(IMqttRequestContext requestContext, ParameterState parameterState, IMqttPayloadTypeConverter typeConverter, out object? result)
+    {
+        return typeConverter.TryConvertPayload(
+            requestContext.Payload,
+            parameterState.ParameterInfo.ParameterType,
+            out result
+        );
+    }
+}
 
-        TypeConverterType = typeConverterType;
+[PublicAPI]
+[AttributeUsage(AttributeTargets.Parameter)]
+public sealed class FromMqttPayloadAttribute<TMqttPayloadTypeConverter> : BaseFromMqttConverterAttribute<IMqttPayloadTypeConverter, TMqttPayloadTypeConverter>
+    where TMqttPayloadTypeConverter : class, IMqttPayloadTypeConverter
+{
+    public FromMqttPayloadAttribute(string? serviceKey = null)
+        : base(MqttBindingSource.Payload, serviceKey)
+    {
+    }
+
+    protected override bool TryConvert(IMqttRequestContext requestContext, ParameterState parameterState, IMqttPayloadTypeConverter typeConverter, out object? result)
+    {
+        return typeConverter.TryConvertPayload(
+            requestContext.Payload,
+            parameterState.ParameterInfo.ParameterType,
+            out result
+        );
     }
 }

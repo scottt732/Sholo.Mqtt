@@ -17,7 +17,7 @@ public sealed class MqttApplicationProvider : IMqttApplicationProvider
         get => _current;
         private set
         {
-            var previous = _current ?? throw new InvalidOperationException();
+            var previous = _current;
             _current = value;
 
             OnApplicationChanged(previous, _current!);

@@ -1,7 +1,9 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.Primitives;
 using Sholo.Mqtt.Topics.FilterSanitizer;
 
 namespace Sholo.Mqtt.Topics.PatternMatcher;
@@ -13,10 +15,26 @@ internal class ComplexTopicPatternMatcher : ITopicPatternMatcher
     public string TopicPattern { get; }
     public IReadOnlySet<string> TopicParameterNames { get; }
     public string? MutliLevelWildcardParameterName { get; }
+    private bool CaseSensitive { get; }
 
     private Regex? PatternMatcher { get; }
 
-    public bool IsTopicMatch(string topic, out IReadOnlyDictionary<string, string[]>? topicArguments)
+    public ComplexTopicPatternMatcher(
+        string topicPattern,
+        Regex patternMatcher,
+        IReadOnlySet<string> topicParameterNames,
+        string? mutliLevelWildcardParameterName
+    )
+    {
+        Topic = TopicFilterSanitizer.SanitizeTopic(topicPattern);
+        TopicPattern = topicPattern;
+        PatternMatcher = patternMatcher;
+        TopicParameterNames = topicParameterNames;
+        MutliLevelWildcardParameterName = mutliLevelWildcardParameterName;
+        CaseSensitive = true; // TODO
+    }
+
+    public bool IsTopicMatch(string topic, out IReadOnlyDictionary<string, StringValues>? topicArguments)
     {
         var match = PatternMatcher!.Match(topic);
         if (!match.Success)
@@ -25,7 +43,9 @@ internal class ComplexTopicPatternMatcher : ITopicPatternMatcher
             return false;
         }
 
-        var result = new Dictionary<string, List<string>>();
+        var stringComparer = CaseSensitive ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase;
+
+        var result = new Dictionary<string, List<string>>(stringComparer);
 
         foreach (var topicParameterName in TopicParameterNames)
         {
@@ -49,21 +69,14 @@ internal class ComplexTopicPatternMatcher : ITopicPatternMatcher
             }
         }
 
-        topicArguments = new ReadOnlyDictionary<string, string[]>(result.ToDictionary(x => x.Key, x => x.Value.ToArray()));
-        return true;
-    }
+        topicArguments = new ReadOnlyDictionary<string, StringValues>(
+            result.ToDictionary(
+                x => x.Key,
+                x => new StringValues(x.Value.ToArray()),
+                stringComparer
+            )
+        );
 
-    public ComplexTopicPatternMatcher(
-        string topicPattern,
-        Regex patternMatcher,
-        IReadOnlySet<string> topicParameterNames,
-        string? mutliLevelWildcardParameterName
-    )
-    {
-        Topic = TopicFilterSanitizer.SanitizeTopic(topicPattern);
-        TopicPattern = topicPattern;
-        PatternMatcher = patternMatcher;
-        TopicParameterNames = topicParameterNames;
-        MutliLevelWildcardParameterName = mutliLevelWildcardParameterName;
+        return true;
     }
 }

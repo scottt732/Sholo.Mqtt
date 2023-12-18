@@ -2,23 +2,50 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
+using Microsoft.Extensions.Primitives;
 
 namespace Sholo.Mqtt.ModelBinding.TypeConverters;
 
 [PublicAPI]
-public class DefaultTypeConverters : IMqttCorrelationDataTypeConverter, IMqttPayloadTypeConverter, IMqttParameterTypeConverter
+public class DefaultTypeConverter : IMqttCorrelationDataTypeConverter, IMqttPayloadTypeConverter, IMqttTopicArgumentTypeConverter, IMqttUserPropertiesTypeConverter
 {
-    public static DefaultTypeConverters Instance => InstanceFactory.Value;
-    private static Lazy<DefaultTypeConverters> InstanceFactory { get; } = new(() => new DefaultTypeConverters());
+    public static DefaultTypeConverter Instance => InstanceFactory.Value;
+    private static Lazy<DefaultTypeConverter> InstanceFactory { get; } = new(() => new DefaultTypeConverter());
 
     public bool TryConvertCorrelationData(byte[]? correlationData, Type targetType, out object? result)
         => TryConvert(new ArraySegment<byte>(correlationData ?? Array.Empty<byte>()), targetType, out result);
 
-    public bool TryConvertPayload(ArraySegment<byte> payloadData, Type targetType, out object? result)
-        => TryConvert(payloadData, targetType, out result);
+    public bool TryConvertPayload(ArraySegment<byte> payload, Type targetType, out object? result)
+        => TryConvert(payload, targetType, out result);
 
-    public bool TryConvertParameter(string? value, Type targetType, out object? result)
-        => TryConvert(value, targetType, out result);
+    public bool TryConvertTopicArgument(string argument, Type targetType, out object? result)
+        => TryConvert(argument, targetType, out result);
+
+    public bool TryConvertUserPropertyValues(StringValues? values, Type targetType, out IList<object?>? result)
+    {
+        if (!values.HasValue)
+        {
+            result = null;
+            return false;
+        }
+
+        var list = new List<object?>();
+        foreach (var value in values)
+        {
+            if (!TryConvert(values, targetType, out var itemResult))
+            {
+                result = null;
+                return false;
+            }
+            else
+            {
+                list.Add(itemResult);
+            }
+        }
+
+        result = list;
+        return true;
+    }
 
     private static Dictionary<Type, Func<string?, object?>> StringTypeConverters { get; } =
         new()

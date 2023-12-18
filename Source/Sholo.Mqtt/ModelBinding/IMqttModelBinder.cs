@@ -1,73 +1,30 @@
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
-using System.Reflection;
-using System.Threading.Tasks;
-using Sholo.Mqtt.Topics.Filter;
+using Microsoft.Extensions.Primitives;
 
 namespace Sholo.Mqtt.ModelBinding;
-
-/*
-public interface IMqttModelBinder
-{
-    bool CanBind(Type targetType);
-}
-
-// ReSharper disable once UnusedTypeParameter - Used to disambiguate in DI
-public interface IMqttModelBinder<TSource> : IMqttModelBinder
-{
-}
-
-public interface IMqttModelBinder<TSource, TTarget> : IMqttModelBinder<TSource>
-{
-    bool TryGetValue(TSource source, out TTarget target);
-}
-*/
 
 public interface IMqttModelBinder
 {
     /// <summary>
-    /// Attempts to bind a model.
+    ///     Attempts to bind the request details to the matched action method's arguments. The results
+    ///     of the binding operation are stored in the <see cref="IMqttRequestContext"/>'s
+    ///     <see cref="IMqttRequestContext.ModelBindingResult" /> property."/>
     /// </summary>
-    /// <param name="bindingContext">The <see cref="ModelBindingContext"/>.</param>
-    /// <returns>
-    /// <para>
-    /// A <see cref="Task"/> which will complete when the model binding process completes.
-    /// </para>
-    /// <para>
-    /// If model binding was successful, the <see cref="ModelBindingContext.Result"/> should have
-    /// <see cref="MqttModelBindingResult.IsModelSet"/> set to <c>true</c>.
-    /// </para>
-    /// <para>
-    /// A model binder that completes successfully should set <see cref="ModelBindingContext.Result"/> to
-    /// a value returned from <see cref="MqttModelBindingResult.Success"/>.
-    /// </para>
-    /// </returns>
-    Task BindModelAsync(IMqttModelBindingContext bindingContext);
-    bool TryPerformModelBinding(
+    /// <param name="modelBindingContext">
+    ///     The <see cref="IMqttModelBindingContext"/> associated with the endpoint or action.
+    /// </param>
+    /// <param name="requestContext">
+    ///     An <see cref="IMqttRequestContext"/> associated with the incoming request
+    /// </param>
+    /// <param name="topicArguments">
+    ///     An <see cref="IReadOnlyDictionary{String,StringValues}"/> containing the arguments
+    ///     extracted from the incoming <paramref name="requestContext" /> using the
+    ///     <paramref name="modelBindingContext"/>'s <see cref="IMqttModelBindingContext.TopicFilter"/>
+    ///     topic filter during the route matching operation.
+    /// </param>
+    void TryPerformModelBinding(
+        IMqttModelBindingContext modelBindingContext,
         IMqttRequestContext requestContext,
-        IMqttTopicFilter topicPatternFilter,
-        MethodInfo action,
-        [MaybeNullWhen(false)] out IDictionary<ParameterInfo, object?> actionArguments);
-}
-
-public class CancellationTokenModelBinder : IMqttModelBinder
-{
-    public Task BindModelAsync(IMqttModelBindingContext bindingContext)
-    {
-        bindingContext.Result = MqttModelBindingResult.Success(bindingContext.Request.ShutdownToken);
-        throw new System.NotImplementedException();
-    }
-
-    public bool TryPerformModelBinding(IMqttRequestContext requestContext, IMqttTopicFilter topicPatternFilter, MethodInfo action, out IDictionary<ParameterInfo, object?> actionArguments)
-    {
-        throw new System.NotImplementedException();
-    }
-}
-
-public class ServicesMqttModelBinder : IMqttModelBinder
-{
-    public bool TryPerformModelBinding(IMqttRequestContext requestContext, IMqttTopicFilter topicPatternFilter, MethodInfo action, out IDictionary<ParameterInfo, object?> actionArguments)
-    {
-        throw new System.NotImplementedException();
-    }
+        IReadOnlyDictionary<string, StringValues> topicArguments
+    );
 }

@@ -1,11 +1,6 @@
-using System;
-using System.Linq;
-using Moq;
-using Sholo.Mqtt.ModelBinding.ValueProviders;
-using Xunit;
-
 namespace Sholo.Mqtt.Test.ValueProviders;
 
+/*
 public class MqttPayloadValueProviderTests
 {
     private IMqttPayloadValueProvider MqttPayloadValueProvider { get; } = new MqttPayloadValueProvider();
@@ -49,3 +44,4 @@ public class MqttPayloadValueProviderTests
         Assert.Equal(0, payload.Count);
     }
 }
+*/

@@ -17,9 +17,13 @@ public interface IMqttTopicFilterBuilder
     /// The topic (or topic mask) to subscribe to. The builder will remove Sholo.Mqtt library parameter variable names from the mask
     /// (e.g., <em>test/#topic_part/parts/*topic_parts</em> will be changed to <em>test/#/parts/*</em>)
     /// </summary>
-    /// <param name="topicPattern">The topic or topic mask to subscribe to</param>
-    /// <returns>The <see cref="IMqttTopicFilterBuilder" /> being configured</returns>
-    IMqttTopicFilterBuilder WithTopicPattern(string topicPattern);
+    /// <param name="topicPattern">
+    /// The topic or topic mask to subscribe to
+    /// </param>
+    /// <returns>
+    /// The <see cref="IMqttTopicFilterBuilder" /> being configured
+    /// </returns>
+    IMqttTopicFilterBuilder WithTopicPattern(string topicPattern); // TODO: bool caseSensitive
 
     /// <summary>
     /// Requests broker to not send application messages forwarded with a ClientID equal to the ClientID of the publishing connection.

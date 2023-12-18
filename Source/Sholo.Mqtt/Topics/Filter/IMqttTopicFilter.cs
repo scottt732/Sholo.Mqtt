@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Primitives;
 using MQTTnet.Protocol;
+using Sholo.Mqtt.Routing;
 
 namespace Sholo.Mqtt.Topics.Filter;
 

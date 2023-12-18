@@ -9,7 +9,7 @@ namespace Sholo.Mqtt.Utilities;
 [PublicAPI]
 internal static class ValidationHelper
 {
-    private static IServiceProvider DefaultServiceProvider { get; }
+    private static ServiceProvider DefaultServiceProvider { get; }
 
     static ValidationHelper()
     {
@@ -30,8 +30,8 @@ internal static class ValidationHelper
 
     public static bool IsValid(object obj, IList<ValidationResult> validationResults, IFileAbstraction? fileAbstraction = null)
     {
-        var serviceProvider = fileAbstraction != null
-            ? CreateServiceProvider(services => services.AddSingleton(fileAbstraction))
+        using var serviceProvider = fileAbstraction != null
+            ? CreateServiceProvider(services => services.AddSingleton(fileAbstraction))!
             : DefaultServiceProvider;
 
         var validationContext = new ValidationContext(obj, serviceProvider, null);
@@ -46,11 +46,11 @@ internal static class ValidationHelper
         return success;
     }
 
-    private static IServiceProvider CreateServiceProvider(Action<IServiceCollection> config)
+    private static ServiceProvider CreateServiceProvider(Action<IServiceCollection> config)
     {
         var serviceCollection = new ServiceCollection();
         config.Invoke(serviceCollection);
         var serviceProvider = serviceCollection.BuildServiceProvider();
-        return serviceProvider;
+        return serviceProvider!;
     }
 }

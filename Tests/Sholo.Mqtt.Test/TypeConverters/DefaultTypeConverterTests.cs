@@ -1033,7 +1033,7 @@ public class DefaultTypeConverterTests
 
     private void TestTryConvertStringHappyPath<T>(string? payload, T expectedResult, Func<T, T, bool> equalityComparer)
     {
-        var converted = DefaultTypeConverters.TryConvert(payload, typeof(T), out var result);
+        var converted = DefaultTypeConverter.Instance.TryConvert(payload, typeof(T), out var result);
 
         Assert.True(converted);
 
@@ -1066,7 +1066,7 @@ public class DefaultTypeConverterTests
 
     private void TestTryConvertStringSadPath<T>(string? payload)
     {
-        var converted = DefaultTypeConverters.TryConvert(payload, typeof(T), out var result);
+        var converted = DefaultTypeConverter.Instance.TryConvert(payload, typeof(T), out var result);
         Assert.False(converted);
         Assert.Null(result);
     }
@@ -1079,7 +1079,7 @@ public class DefaultTypeConverterTests
 
     private void TestTryConvertArraySegmentOfBytesHappyPath<T>(ArraySegment<byte> payload, T expectedResult, Func<T, T, bool> equalityComparer)
     {
-        var converted = DefaultTypeConverters.TryConvert(payload, typeof(T), out var result);
+        var converted = DefaultTypeConverter.Instance.TryConvert(payload, typeof(T), out var result);
 
         Assert.True(converted);
 
@@ -1112,7 +1112,7 @@ public class DefaultTypeConverterTests
 
     private void TestTryConvertArraySegmentOfBytesSadPath<T>(ArraySegment<byte> payload)
     {
-        var converted = DefaultTypeConverters.TryConvert(payload, typeof(T), out var result);
+        var converted = DefaultTypeConverter.Instance.TryConvert(payload, typeof(T), out var result);
         Assert.False(converted);
         Assert.Null(result);
     }

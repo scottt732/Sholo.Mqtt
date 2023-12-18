@@ -11,7 +11,7 @@ namespace Sholo.Mqtt.Topics.PatternMatcherFactory;
 // TODO: In the meantime, I opted to compile the regular expressions created since the ratio of instance usage to instance creation is likely high enough to justify the setup cost.
 internal class TopicPatternMatcherFactory : ITopicPatternMatcherFactory
 {
-    public ITopicPatternMatcher CreateTopicPatternMatcher(string topicPattern)
+    public ITopicPatternMatcher CreateTopicPatternMatcher(string topicPattern) // TODO: , bool caseSensitive
     {
         if (topicPattern == null) throw new ArgumentNullException(nameof(topicPattern), $"{nameof(topicPattern)} is required.");
         if (string.IsNullOrEmpty(topicPattern)) throw new ArgumentException($"{nameof(topicPattern)} must be non-empty.", nameof(topicPattern));
@@ -25,7 +25,9 @@ internal class TopicPatternMatcherFactory : ITopicPatternMatcherFactory
         var regBuilder = new StringBuilder();
         string? mutliLevelWildcardVariableName = null;
 
-        var topicParameterNames = new HashSet<string>();
+        var stringComparer = StringComparer.Ordinal;
+
+        var topicParameterNames = new HashSet<string>(stringComparer);
         for (var i = 0; i < topicParts.Length; i++)
         {
             var topicPart = topicParts[i];
@@ -82,7 +84,16 @@ internal class TopicPatternMatcherFactory : ITopicPatternMatcherFactory
 
         regBuilder.Append('$');
 
-        var regex = new Regex(regBuilder.ToString(), RegexOptions.Compiled);
+        var regexOptions = RegexOptions.Compiled;
+
+        /*
+        if (!caseSensitive)
+        {
+            regexOptions |= RegexOptions.IgnoreCase;
+        }
+        */
+
+        var regex = new Regex(regBuilder.ToString(), regexOptions);
 
         return new ComplexTopicPatternMatcher(topicPattern, regex, topicParameterNames, mutliLevelWildcardVariableName);
     }

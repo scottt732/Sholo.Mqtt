@@ -16,7 +16,7 @@ public class MqttTopicPatternPropertyConfigurationBuilder<TParameter> : IMqttTop
         ParameterName = initialParameterName;
         ValueSetter = valueSetter;
 
-        if (DefaultTypeConverters.TryGetStringTypeConverter(parameterType, out var typeConverter))
+        if (DefaultTypeConverter.TryGetStringTypeConverter(parameterType, out var typeConverter))
         {
             TypeConverter = typeConverter!;
         }

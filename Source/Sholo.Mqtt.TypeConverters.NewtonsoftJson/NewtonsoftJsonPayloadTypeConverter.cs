@@ -25,7 +25,7 @@ public class NewtonsoftJsonPayloadTypeConverter : IMqttPayloadTypeConverter
         Serializer = JsonSerializer.Create(options.Value.SerializerSettings);
     }
 
-    public bool TryConvertPayload(ArraySegment<byte> payloadData, Type targetType, out object result) => TryConvert(payloadData, targetType, out result);
+    public bool TryConvertPayload(ArraySegment<byte> payload, Type targetType, out object result) => TryConvert(payload, targetType, out result);
 
     private bool TryConvert(ArraySegment<byte> data, Type targetType, out object result)
     {

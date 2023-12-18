@@ -1,12 +1,17 @@
 using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Primitives;
 using MQTTnet;
 using MQTTnet.Extensions.ManagedClient;
 using MQTTnet.Packets;
 using MQTTnet.Protocol;
+using Sholo.Mqtt.ModelBinding;
 
 namespace Sholo.Mqtt;
 
@@ -18,7 +23,7 @@ internal class MqttRequestContext : IMqttRequestContext
     public ArraySegment<byte> Payload { get; }
     public MqttQualityOfServiceLevel QualityOfServiceLevel { get; }
     public bool Retain { get; }
-    public MqttUserProperty[] UserProperties { get; } = null!;
+    public IReadOnlyDictionary<string, StringValues> UserProperties { get; } = null!;
     public string? ContentType { get; }
     public bool Dup { get; }
     public string? ResponseTopic { get; }
@@ -29,33 +34,13 @@ internal class MqttRequestContext : IMqttRequestContext
     public uint[]? SubscriptionIdentifiers { get; }
     public string ClientId { get; } = null!;
     public CancellationToken ShutdownToken => ShutdownTokenFactory.Value;
+    public IMqttModelBindingResult? ModelBindingResult { get; set; }
 
     private Lazy<IManagedMqttClient> ClientFactory { get; }
     private Lazy<IHostApplicationLifetime?> HostApplicationLifetimeFactory { get; }
     private Lazy<CancellationToken> ShutdownTokenFactory { get; }
 
     private IManagedMqttClient Client => ClientFactory.Value;
-
-    public MqttRequestContext(MqttRequestContext context)
-        : this(
-            context.ServiceProvider,
-            context.Topic,
-            context.Payload,
-            context.QualityOfServiceLevel,
-            context.Retain,
-            context.UserProperties,
-            context.ContentType,
-            context.Dup,
-            context.ResponseTopic,
-            context.PayloadFormatIndicator,
-            context.MessageExpiryInterval,
-            context.TopicAlias,
-            context.CorrelationData,
-            context.SubscriptionIdentifiers,
-            context.ClientId
-        )
-    {
-    }
 
     internal MqttRequestContext(IServiceProvider serviceProvider, MqttApplicationMessage message, string clientId)
         : this(
@@ -73,7 +58,8 @@ internal class MqttRequestContext : IMqttRequestContext
             message.TopicAlias,
             message.CorrelationData,
             message.SubscriptionIdentifiers?.ToArray(),
-            clientId
+            clientId,
+            StringComparer.Ordinal // TODO: Configuration
         )
     {
     }
@@ -93,15 +79,30 @@ internal class MqttRequestContext : IMqttRequestContext
         ushort? topicAlias,
         byte[]? correlationData,
         uint[]? subscriptionIdentifiers,
-        string clientId
-    )
+        string clientId,
+        IEqualityComparer<string>? userPropertiesKeyEqualityComparer)
         : this(serviceProvider)
     {
         Topic = topic;
         Payload = payload;
         QualityOfServiceLevel = qualityOfServiceLevel;
         Retain = retain;
-        UserProperties = userProperties ?? Array.Empty<MqttUserProperty>();
+
+        userProperties ??= Array.Empty<MqttUserProperty>();
+        userPropertiesKeyEqualityComparer ??= StringComparer.Ordinal;
+        UserProperties = new ReadOnlyDictionary<string, StringValues>(
+            userProperties
+                .GroupBy(
+                    x => x.Name,
+                    userPropertiesKeyEqualityComparer
+                )
+                .ToDictionary(
+                    x => x.Key,
+                    x => new StringValues(x.Select(y => y.Value).ToArray()),
+                    userPropertiesKeyEqualityComparer
+                )
+        );
+
         ContentType = contentType;
         Dup = dup;
         ResponseTopic = responseTopic;
